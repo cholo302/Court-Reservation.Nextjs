@@ -1,0 +1,231 @@
+// Prisma schema for Court Reservation System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  name            String
+  email           String    @unique
+  phone           String?   @unique
+  password        String
+  role            String    @default("user") // user, admin
+  profileImage    String?   @map("profile_image")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  phoneVerifiedAt DateTime? @map("phone_verified_at")
+  isBlacklisted   Boolean   @default(false) @map("is_blacklisted")
+  blacklistReason String?   @map("blacklist_reason")
+  isActive        Boolean   @default(true) @map("is_active")
+  provider        String?
+  providerId      String?   @map("provider_id")
+  rememberToken   String?   @map("remember_token")
+  govIdType       String?   @map("gov_id_type")
+  govIdPhoto      String?   @map("gov_id_photo")
+  facePhoto       String?   @map("face_photo")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  bookings      Booking[]
+  payments      Payment[]
+  reviews       Review[]
+  notifications Notification[]
+  activityLogs  ActivityLog[]
+
+  @@map("users")
+}
+
+model CourtType {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  icon      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  courts Court[]
+
+  @@map("court_types")
+}
+
+model Court {
+  id                Int       @id @default(autoincrement())
+  courtTypeId       Int       @map("court_type_id")
+  name              String
+  description       String?
+  location          String?
+  barangay          String?
+  city              String?
+  province          String?
+  hourlyRate        Decimal   @default(500) @map("hourly_rate")
+  peakHourRate      Decimal?  @map("peak_hour_rate")
+  halfCourtRate     Decimal?  @map("half_court_rate")
+  weekendRate       Decimal?  @map("weekend_rate")
+  capacity          Int?
+  amenities         String? // JSON array
+  thumbnail         String?
+  rules             String?
+  operatingHours    String?   @map("operating_hours") // JSON
+  minBookingHours   Int       @default(1) @map("min_booking_hours")
+  maxBookingHours   Int       @default(4) @map("max_booking_hours")
+  downpaymentPercent Int      @default(50) @map("downpayment_percent")
+  isActive          Boolean   @default(true) @map("is_active")
+  rating            Decimal   @default(0)
+  totalReviews      Int       @default(0) @map("total_reviews")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  courtType CourtType @relation(fields: [courtTypeId], references: [id])
+  bookings  Booking[]
+  reviews   Review[]
+  schedules CourtSchedule[]
+
+  @@map("courts")
+}
+
+model CourtSchedule {
+  id        Int       @id @default(autoincrement())
+  courtId   Int       @map("court_id")
+  date      DateTime
+  isClosed  Boolean   @default(false) @map("is_closed")
+  reason    String?
+  openTime  String?   @map("open_time")
+  closeTime String?   @map("close_time")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  court Court @relation(fields: [courtId], references: [id])
+
+  @@map("court_schedules")
+}
+
+model Booking {
+  id                Int       @id @default(autoincrement())
+  bookingCode       String    @unique @map("booking_code")
+  userId            Int       @map("user_id")
+  courtId           Int       @map("court_id")
+  bookingDate       DateTime  @map("booking_date")
+  startTime         String    @map("start_time")
+  endTime           String    @map("end_time")
+  durationHours     Decimal   @map("duration_hours")
+  isHalfCourt       Boolean   @default(false) @map("is_half_court")
+  hourlyRate        Decimal   @map("hourly_rate")
+  totalAmount       Decimal   @map("total_amount")
+  downpaymentAmount Decimal   @map("downpayment_amount")
+  balanceAmount     Decimal   @map("balance_amount")
+  status            String    @default("pending") // pending, confirmed, paid, completed, cancelled, no_show, expired
+  paymentStatus     String    @default("unpaid") @map("payment_status") // unpaid, partial, paid
+  paymentType       String?   @map("payment_type") // online, venue
+  entryQrCode       String?   @map("entry_qr_code")
+  playerCount       Int?      @map("player_count")
+  notes             String?
+  adminNotes        String?   @map("admin_notes")
+  confirmedAt       DateTime? @map("confirmed_at")
+  paidAt            DateTime? @map("paid_at")
+  cancelledAt       DateTime? @map("cancelled_at")
+  cancellationReason String?  @map("cancellation_reason")
+  expiresAt         DateTime? @map("expires_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id])
+  court    Court     @relation(fields: [courtId], references: [id])
+  payments Payment[]
+  review   Review?
+
+  @@map("bookings")
+}
+
+model Payment {
+  id               Int       @id @default(autoincrement())
+  paymentReference String    @unique @map("payment_reference")
+  bookingId        Int       @map("booking_id")
+  userId           Int       @map("user_id")
+  amount           Decimal
+  paymentMethod    String?   @map("payment_method") // gcash, maya, cash
+  paymentType      String?   @map("payment_type") // downpayment, full, balance
+  qrCodeUrl        String?   @map("qr_code_url")
+  qrCodeData       String?   @map("qr_code_data")
+  checkoutUrl      String?   @map("checkout_url")
+  transactionId    String?   @map("transaction_id")
+  gatewayResponse  String?   @map("gateway_response")
+  proofScreenshot  String?   @map("proof_screenshot")
+  status           String    @default("pending") // pending, processing, paid, rejected, refunded
+  verifiedBy       Int?      @map("verified_by")
+  verifiedAt       DateTime? @map("verified_at")
+  refundAmount     Decimal?  @map("refund_amount")
+  refundReason     String?   @map("refund_reason")
+  refundedAt       DateTime? @map("refunded_at")
+  paidAt           DateTime? @map("paid_at")
+  expiresAt        DateTime? @map("expires_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("payments")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  bookingId Int      @unique @map("booking_id")
+  userId    Int      @map("user_id")
+  courtId   Int      @map("court_id")
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  court   Court   @relation(fields: [courtId], references: [id])
+
+  @@map("reviews")
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  type      String
+  title     String
+  message   String
+  data      String? // JSON
+  channel   String    @default("web") // web, email, sms
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("user_id")
+  action      String
+  description String?
+  entityType  String?  @map("entity_type")
+  entityId    Int?     @map("entity_id")
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("activity_logs")
+}
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
