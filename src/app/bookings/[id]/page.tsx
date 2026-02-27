@@ -36,6 +36,8 @@ interface Booking {
     status: string
     method: string
     amount: number
+    transactionId: string | null
+    proofScreenshot: string | null
   } | null
 }
 
@@ -76,10 +78,10 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
     if (!confirm('Are you sure you want to cancel this booking?')) return
 
     try {
-      const response = await fetch(`/api/bookings/${params.id}`, {
+      const response = await fetch(`/api/bookings/${params.id}?action=cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel' }),
+        body: JSON.stringify({ reason: 'User cancelled' }),
       })
 
       if (!response.ok) throw new Error('Failed to cancel booking')
@@ -156,13 +158,18 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="flex items-center mb-2">
+            <div className="flex items-center gap-2 mb-2">
               <span
                 className={`${config.bg} ${config.text} px-3 py-1 rounded-full text-sm font-medium`}
               >
                 <i className={`fas ${config.icon} mr-1`}></i>
                 {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
               </span>
+              {booking.payment?.status === 'paid' && (
+                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                  <i className="fas fa-check-circle mr-1"></i>Paid
+                </span>
+              )}
             </div>
             <h1 className="text-2xl font-bold text-gray-900">Booking #{booking.bookingCode}</h1>
             <p className="text-gray-500">
@@ -171,7 +178,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
           </div>
 
           <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
-            {booking.status === 'pending' && (
+            {booking.status === 'pending' && !booking.payment && (
               <>
                 <Link
                   href={`/bookings/${booking.id}/pay`}
@@ -181,11 +188,20 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 </Link>
                 <button
                   onClick={handleCancel}
-                  className="inline-flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition"
+                  className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition whitespace-nowrap"
                 >
                   <i className="fas fa-times mr-2"></i>Cancel
                 </button>
               </>
+            )}
+
+            {booking.payment?.status === 'processing' && (
+              <button
+                disabled
+                className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium cursor-not-allowed"
+              >
+                <i className="fas fa-hourglass-half mr-2"></i>Awaiting Verification
+              </button>
             )}
 
             {['paid', 'confirmed'].includes(booking.status) && (
@@ -279,6 +295,12 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 <span className="text-gray-600">Reference</span>
                 <span className="font-medium">{booking.payment.referenceNumber}</span>
               </div>
+              {booking.payment.transactionId && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">GCash Ref</span>
+                  <span className="font-medium">{booking.payment.transactionId}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-600">Method</span>
                 <span className="font-medium capitalize">{booking.payment.method}</span>
@@ -287,22 +309,44 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 <span className="text-gray-600">Status</span>
                 <span
                   className={`font-medium capitalize ${
-                    booking.payment.status === 'verified'
+                    booking.payment.status === 'paid'
                       ? 'text-green-600'
-                      : booking.payment.status === 'pending'
-                      ? 'text-yellow-600'
-                      : 'text-gray-600'
+                      : booking.payment.status === 'processing'
+                      ? 'text-blue-600'
+                      : booking.payment.status === 'rejected'
+                      ? 'text-red-600'
+                      : 'text-yellow-600'
                   }`}
                 >
-                  {booking.payment.status}
+                  {booking.payment.status === 'paid' ? 'Verified' : 
+                   booking.payment.status === 'processing' ? 'Awaiting Verification' : 
+                   booking.payment.status}
                 </span>
               </div>
               <div className="flex justify-between border-t pt-3">
-                <span className="font-semibold">Amount Paid</span>
+                <span className="font-semibold">
+                  {booking.payment.status === 'paid' ? 'Amount Paid' : 'Amount Submitted'}
+                </span>
                 <span className="text-xl font-bold text-ph-blue">
                   {formatPrice(booking.payment.amount)}
                 </span>
               </div>
+              {booking.payment.status === 'processing' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                  <p className="text-sm text-blue-700">
+                    <i className="fas fa-info-circle mr-1"></i>
+                    Your payment proof has been submitted and is waiting for admin verification.
+                  </p>
+                </div>
+              )}
+              {booking.payment.status === 'rejected' && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
+                  <p className="text-sm text-red-700">
+                    <i className="fas fa-exclamation-circle mr-1"></i>
+                    Your payment was rejected. Please contact support or submit a new payment.
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-4">

@@ -58,13 +58,13 @@ export async function GET(
       }
     }
 
-    // Get existing bookings for this date
+    // Get existing bookings for this date - only confirmed/paid/completed should block slots
     const existingBookings = await prisma.booking.findMany({
       where: {
         courtId,
         bookingDate: new Date(date),
         status: {
-          notIn: ['cancelled', 'expired'],
+          in: ['confirmed', 'paid', 'completed'],
         },
       },
       select: {

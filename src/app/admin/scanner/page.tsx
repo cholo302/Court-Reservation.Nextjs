@@ -15,11 +15,19 @@ interface ScanResult {
   totalAmount: number
 }
 
+interface CheckIn {
+  bookingCode: string
+  userName: string
+  courtName: string
+  checkedInAt: Date
+}
+
 export default function QRScannerPage() {
   const [scanning, setScanning] = useState(false)
   const [manualCode, setManualCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<ScanResult | null>(null)
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
@@ -121,6 +129,15 @@ export default function QRScannerPage() {
       })
 
       if (!response.ok) throw new Error('Failed to update')
+
+      // Add to recent check-ins
+      const newCheckIn: CheckIn = {
+        bookingCode: result.bookingCode,
+        userName: result.userName,
+        courtName: result.courtName,
+        checkedInAt: new Date(),
+      }
+      setCheckIns([newCheckIn, ...checkIns])
 
       toast.success('Booking marked as completed!')
       setResult({ ...result, status: 'completed' })
@@ -362,9 +379,41 @@ export default function QRScannerPage() {
           <i className="fas fa-history mr-2"></i>
           Recent Check-ins
         </h2>
-        <p className="text-gray-500 text-center py-8">
-          Recent check-ins will appear here during this session
-        </p>
+        {checkIns.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">
+            Recent check-ins will appear here during this session
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Booking Code</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">User Name</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Court</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Check-in Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {checkIns.map((checkIn, index) => (
+                  <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4 font-medium text-gray-900">#{checkIn.bookingCode}</td>
+                    <td className="py-3 px-4 text-gray-700">{checkIn.userName}</td>
+                    <td className="py-3 px-4 text-gray-700">{checkIn.courtName}</td>
+                    <td className="py-3 px-4 text-gray-600">
+                      {checkIn.checkedInAt.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: true,
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -14,6 +14,8 @@ interface User {
   isActive: boolean
   isBlacklisted: boolean
   govIdType: string | null
+  govIdPhoto: string | null
+  facePhoto: string | null
   createdAt: string
 }
 
@@ -23,6 +25,7 @@ export default function AdminUsersPage() {
 
   const [loading, setLoading] = useState(true)
   const [users, setUsers] = useState<User[]>([])
+  const [viewingID, setViewingID] = useState<{ type: 'gov' | 'face'; image: string } | null>(null)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -51,9 +54,7 @@ export default function AdminUsersPage() {
         ? 'Remove this user from blacklist?'
         : action === 'activate'
         ? 'Activate this user account?'
-        : action === 'deactivate'
-        ? 'Deactivate this user account?'
-        : 'Verify this user ID?'
+        : 'Deactivate this user account?'
 
     if (!confirm(confirmMsg)) return
 
@@ -81,8 +82,6 @@ export default function AdminUsersPage() {
               return { ...u, isActive: true }
             case 'deactivate':
               return { ...u, isActive: false }
-            case 'verify':
-              return { ...u, isActive: true }
             default:
               return u
           }
@@ -189,24 +188,29 @@ export default function AdminUsersPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    {user.govIdType ? (
-                      <div>
-                        <p className="text-sm capitalize">
-                          {user.govIdType.replace('_', ' ')}
-                        </p>
-                        {user.isActive ? (
-                          <span className="text-xs text-green-600">
-                            <i className="fas fa-check-circle mr-1"></i>Verified
-                          </span>
-                        ) : (
-                          <span className="text-xs text-yellow-600">
-                            <i className="fas fa-clock mr-1"></i>Pending
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-gray-400">No ID</span>
-                    )}
+                    <div className="flex gap-2">
+                      {user.govIdPhoto ? (
+                        <button
+                          onClick={() => setViewingID({ type: 'gov', image: user.govIdPhoto! })}
+                          className="text-ph-blue hover:text-blue-800 text-xs font-medium"
+                          title={`Government ID: ${user.govIdType}`}
+                        >
+                          <i className="fas fa-id-card mr-1"></i>
+                          View ID
+                        </button>
+                      ) : (
+                        <span className="text-sm text-gray-400">No ID</span>
+                      )}
+                      {user.facePhoto && (
+                        <button
+                          onClick={() => setViewingID({ type: 'face', image: user.facePhoto! })}
+                          className="text-green-600 hover:text-green-800 text-xs font-medium"
+                        >
+                          <i className="fas fa-camera mr-1"></i>
+                          Selfie
+                        </button>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="space-y-1">
@@ -235,14 +239,6 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {!user.isActive && user.govIdType && (
-                        <button
-                          onClick={() => handleAction(user.id, 'verify')}
-                          className="text-green-600 hover:underline text-xs"
-                        >
-                          Verify ID
-                        </button>
-                      )}
                       {user.isActive ? (
                         <button
                           onClick={() => handleAction(user.id, 'deactivate')}
@@ -281,6 +277,38 @@ export default function AdminUsersPage() {
           </tbody>
         </table>
       </div>
+
+      {/* ID Viewer Modal */}
+      {viewingID && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          onClick={() => setViewingID(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-semibold text-gray-900">
+                {viewingID.type === 'gov' ? 'Government ID' : 'Selfie/Face Photo'}
+              </h3>
+              <button
+                onClick={() => setViewingID(null)}
+                className="text-gray-400 hover:text-gray-600 text-xl"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="p-4 overflow-auto max-h-[75vh]">
+              <img
+                src={viewingID.image}
+                alt={viewingID.type === 'gov' ? 'Government ID' : 'Face Photo'}
+                className="w-full h-auto rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

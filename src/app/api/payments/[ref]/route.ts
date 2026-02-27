@@ -94,6 +94,13 @@ export async function POST(
     }
 
     if (action === 'verify' && session.user.role === 'admin') {
+      if (payment.status !== 'pending' && payment.status !== 'processing') {
+        return NextResponse.json(
+          { error: 'Payment is not in a verifiable state' },
+          { status: 400 }
+        )
+      }
+
       const updatedPayment = await prisma.payment.update({
         where: { paymentReference: params.ref },
         data: {
@@ -108,22 +115,23 @@ export async function POST(
       await prisma.booking.update({
         where: { id: payment.bookingId },
         data: {
-          status: 'paid',
+          status: 'confirmed',
           paymentStatus: 'paid',
           paidAt: new Date(),
+          confirmedAt: new Date(),
         },
       })
 
-      // Log activity
-      await prisma.activityLog.create({
-        data: {
-          userId: parseInt(session.user.id),
-          action: 'payment_verified',
-          description: `Payment ${params.ref} verified`,
-          entityType: 'payment',
-          entityId: payment.id,
-        },
-      })
+      // Log activity (commented out until migrations are run)
+      // await prisma.activityLog.create({
+      //   data: {
+      //     userId: parseInt(session.user.id),
+      //     action: 'payment_verified',
+      //     description: `Payment ${params.ref} verified`,
+      //     entityType: 'payment',
+      //     entityId: payment.id,
+      //   },
+      // })
 
       return NextResponse.json({
         ...updatedPayment,

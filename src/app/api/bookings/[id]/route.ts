@@ -69,6 +69,15 @@ export async function GET(
           amount: Number(p.amount),
           refundAmount: p.refundAmount ? Number(p.refundAmount) : null,
         })),
+        payment: booking.payments.length > 0 ? {
+          id: booking.payments[0].id,
+          referenceNumber: booking.payments[0].paymentReference,
+          status: booking.payments[0].status,
+          method: booking.payments[0].paymentMethod,
+          amount: Number(booking.payments[0].amount),
+          transactionId: booking.payments[0].transactionId,
+          proofScreenshot: booking.payments[0].proofScreenshot,
+        } : null,
       },
     })
   } catch (error) {
@@ -128,16 +137,16 @@ export async function POST(
         },
       })
 
-      // Log activity
-      await prisma.activityLog.create({
-        data: {
-          userId: parseInt(session.user.id),
-          action: 'booking_cancelled',
-          description: `Booking ${booking.bookingCode} was cancelled`,
-          entityType: 'booking',
-          entityId: booking.id,
-        },
-      })
+      // Log activity (commented out until migrations are run)
+      // await prisma.activityLog.create({
+      //   data: {
+      //     userId: parseInt(session.user.id),
+      //     action: 'booking_cancelled',
+      //     description: `Booking ${booking.bookingCode} was cancelled`,
+      //     entityType: 'booking',
+      //     entityId: booking.id,
+      //   },
+      // })
 
       return NextResponse.json(updatedBooking)
     }

@@ -20,6 +20,9 @@ interface Booking {
     thumbnail: string | null
   }
   hasReview: boolean
+  payment: {
+    status: string
+  } | null
 }
 
 const statusConfig: Record<string, { bg: string; text: string; icon: string }> = {
@@ -64,10 +67,10 @@ export default function BookingsPage() {
     if (!confirm('Are you sure you want to cancel this booking?')) return
 
     try {
-      const response = await fetch(`/api/bookings/${bookingId}`, {
+      const response = await fetch(`/api/bookings/${bookingId}?action=cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel' }),
+        body: JSON.stringify({ reason: 'User cancelled' }),
       })
 
       if (!response.ok) {
@@ -195,13 +198,18 @@ export default function BookingsPage() {
                   <div className="flex-1 p-4 md:p-6">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between">
                       <div className="mb-4 md:mb-0">
-                        <div className="flex items-center mb-2">
+                        <div className="flex items-center gap-2 mb-2">
                           <span
                             className={`${config.bg} ${config.text} px-3 py-1 rounded-full text-xs font-medium`}
                           >
                             <i className={`fas ${config.icon} mr-1`}></i>
                             {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                           </span>
+                          {booking.payment?.status === 'paid' && (
+                            <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                              <i className="fas fa-check-circle mr-1"></i>Paid
+                            </span>
+                          )}
                           <span className="text-gray-400 text-sm ml-3">
                             #{booking.bookingCode || 'N/A'}
                           </span>

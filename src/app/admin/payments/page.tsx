@@ -15,6 +15,8 @@ interface Payment {
   paymentMethod: string | null
   paymentType: string | null
   status: string
+  proofScreenshot: string | null
+  transactionId: string | null
   createdAt: string
   paidAt: string | null
 }
@@ -33,6 +35,7 @@ export default function AdminPaymentsPage() {
 
   const [loading, setLoading] = useState(true)
   const [payments, setPayments] = useState<Payment[]>([])
+  const [viewingProof, setViewingProof] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -216,6 +219,9 @@ export default function AdminPaymentsPage() {
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Proof
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Date
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -226,7 +232,7 @@ export default function AdminPaymentsPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {payments.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                   <i className="fas fa-credit-card text-4xl mb-2"></i>
                   <p>No payments found</p>
                 </td>
@@ -265,11 +271,26 @@ export default function AdminPaymentsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
+                      {payment.proofScreenshot ? (
+                        <button
+                          onClick={() => setViewingProof(payment.proofScreenshot)}
+                          className="text-ph-blue hover:text-blue-800 text-sm font-medium underline"
+                        >
+                          View Proof
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 text-sm">No proof</span>
+                      )}
+                      {payment.transactionId && (
+                        <p className="text-xs text-gray-500 mt-1">Ref: {payment.transactionId}</p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
                       <p className="text-sm">{formatDate(payment.createdAt)}</p>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex space-x-2">
-                        {payment.status === 'pending' && (
+                        {(payment.status === 'pending' || payment.status === 'processing') && (
                           <>
                             <button
                               onClick={() => handleVerify(payment.paymentReference, 'approve')}
@@ -286,7 +307,14 @@ export default function AdminPaymentsPage() {
                           </>
                         )}
                         {payment.status === 'paid' && (
-                          <span className="text-gray-400 text-sm">Verified</span>
+                          <span className="text-green-600 text-sm">
+                            <i className="fas fa-check-circle mr-1"></i>Verified
+                          </span>
+                        )}
+                        {payment.status === 'rejected' && (
+                          <span className="text-red-600 text-sm">
+                            <i className="fas fa-times-circle mr-1"></i>Rejected
+                          </span>
                         )}
                       </div>
                     </td>
@@ -297,6 +325,36 @@ export default function AdminPaymentsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Proof Viewer Modal */}
+      {viewingProof && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          onClick={() => setViewingProof(null)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-semibold text-gray-900">Payment Proof Screenshot</h3>
+              <button
+                onClick={() => setViewingProof(null)}
+                className="text-gray-400 hover:text-gray-600 text-xl"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="p-4 overflow-auto max-h-[75vh]">
+              <img
+                src={viewingProof}
+                alt="Payment Proof"
+                className="w-full h-auto rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

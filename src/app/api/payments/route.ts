@@ -36,7 +36,11 @@ export async function GET(request: NextRequest) {
           },
         },
         user: {
-          select: { id: true, name: true, email: true },
+          select: { 
+            id: true, 
+            name: true, 
+            email: true,
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -51,6 +55,9 @@ export async function GET(request: NextRequest) {
         bookingDate: p.booking?.bookingDate,
         courtName: p.booking?.court?.name,
         userName: p.user?.name,
+        userEmail: p.user?.email,
+        proofScreenshot: p.proofScreenshot,
+        transactionId: p.transactionId,
       }))
     )
   } catch (error) {

@@ -22,6 +22,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [proofPreview, setProofPreview] = useState<string | null>(null)
   const [referenceNumber, setReferenceNumber] = useState('')
+  const gcashPhone = process.env.NEXT_PUBLIC_GCASH_PHONE || '+63 993 163 ••••'
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -72,41 +73,24 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
     setUploading(true)
 
     try {
-      // First create the payment record
-      const paymentResponse = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId: parseInt(params.id),
-          method: 'gcash',
-          amount: booking?.totalAmount,
-        }),
-      })
-
-      if (!paymentResponse.ok) {
-        throw new Error('Failed to create payment')
-      }
-
-      const paymentData = await paymentResponse.json()
-
-      // Then upload the proof
+      // Upload proof image first
       const formData = new FormData()
       formData.append('proof', proofFile)
       formData.append('referenceNumber', referenceNumber)
+      formData.append('bookingId', params.id)
+      formData.append('amount', String(booking?.totalAmount))
 
-      const uploadResponse = await fetch(
-        `/api/payments/${paymentData.payment.referenceNumber}/upload-proof`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      )
+      const response = await fetch('/api/payments/upload-proof', {
+        method: 'POST',
+        body: formData,
+      })
 
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload payment proof')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to submit payment')
       }
 
-      toast.success('Payment proof uploaded! Waiting for verification.')
+      toast.success('Payment proof uploaded! Waiting for admin verification.')
       router.push(`/bookings/${params.id}`)
     } catch (error: any) {
       toast.error(error.message || 'Failed to process payment')
@@ -187,23 +171,35 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
           </h3>
           <ol className="list-decimal list-inside text-sm text-gray-600 space-y-2">
             <li>Open your GCash app</li>
-            <li>Scan the QR code below or send to: <strong>09XX-XXX-XXXX</strong></li>
+            <li>Scan the QR code below or send to: <strong>{gcashPhone}</strong></li>
             <li>Enter the exact amount: <strong>{formatPrice(booking.totalAmount)}</strong></li>
             <li>Take a screenshot of the payment confirmation</li>
             <li>Upload the screenshot below and enter the reference number</li>
           </ol>
         </div>
 
-        {/* GCash QR Code Placeholder */}
+        {/* GCash QR Code */}
         <div className="bg-gray-100 rounded-lg p-8 mb-6 text-center">
-          <div className="w-48 h-48 bg-white mx-auto rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-            <div className="text-center">
-              <i className="fas fa-qrcode text-4xl text-gray-400 mb-2"></i>
-              <p className="text-sm text-gray-500">GCash QR Code</p>
-            </div>
+          <div className="w-64 h-64 bg-white mx-auto rounded-lg flex items-center justify-center border border-gray-300 overflow-hidden">
+            <img 
+              src="/uploads/qrcodes/gcash-qr.jpg" 
+              alt="GCash QR Code"
+              className="w-full h-full object-contain"
+              onError={(e: any) => {
+                e.currentTarget.parentElement.innerHTML = `
+                  <div class="text-center w-full h-full flex items-center justify-center">
+                    <div>
+                      <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-2"></i>
+                      <p class="text-sm text-gray-600">QR code image not found</p>
+                      <p class="text-xs text-gray-500 mt-2">Contact support to configure</p>
+                    </div>
+                  </div>
+                `
+              }}
+            />
           </div>
           <p className="text-sm text-gray-600 mt-4">
-            Or send to: <strong>09XX-XXX-XXXX</strong>
+            Or send to: <strong>{gcashPhone}</strong>
           </p>
         </div>
 

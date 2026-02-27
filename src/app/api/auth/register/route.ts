@@ -95,16 +95,16 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create activity log
-    await prisma.activityLog.create({
-      data: {
-        userId: user.id,
-        action: 'register',
-        description: `New user registered with ${govIdType} - Awaiting verification`,
-        entityType: 'user',
-        entityId: user.id,
-      },
-    })
+    // Create activity log (commented out until migrations are run)
+    // await prisma.activityLog.create({
+    //   data: {
+    //     userId: user.id,
+    //     action: 'register',
+    //     description: `New user registered with ${govIdType} - Awaiting verification`,
+    //     entityType: 'user',
+    //     entityId: user.id,
+    //   },
+    // })
 
     // Create notification for user
     await prisma.notification.create({

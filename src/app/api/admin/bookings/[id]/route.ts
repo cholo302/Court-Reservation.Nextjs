@@ -114,16 +114,16 @@ export async function POST(
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
-    // Log activity
-    await prisma.activityLog.create({
-      data: {
-        userId: parseInt(session.user.id),
-        action: `booking_${action}`,
-        description: `Booking ${booking.bookingCode} was ${action}ed by admin`,
-        entityType: 'booking',
-        entityId: booking.id,
-      },
-    })
+    // Log activity (commented out until migrations are run)
+    // await prisma.activityLog.create({
+    //   data: {
+    //     userId: parseInt(session.user.id),
+    //     action: `booking_${action}`,
+    //     description: `Booking ${booking.bookingCode} was ${action}ed by admin`,
+    //     entityType: 'booking',
+    //     entityId: booking.id,
+    //   },
+    // })
 
     return NextResponse.json({
       ...updatedBooking,

@@ -22,25 +22,39 @@ export async function GET(request: NextRequest) {
       userId: parseInt(session.user.id),
     }
 
-    if (status) {
+    // Handle special case for 'paid' filter - filter by payment status instead of booking status
+    let paymentStatusFilter: any = undefined
+    if (status === 'paid') {
+      paymentStatusFilter = {
+        payments: {
+          some: {
+            status: 'paid',
+          },
+        },
+      }
+    } else if (status && status !== 'paid') {
       where.status = status
     }
 
     const [bookings, total] = await Promise.all([
       prisma.booking.findMany({
-        where,
+        where: paymentStatusFilter ? { ...where, ...paymentStatusFilter } : where,
         include: {
           court: {
             include: {
               courtType: true,
             },
           },
+          payments: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
         },
         orderBy: { bookingDate: 'desc' },
         skip: (page - 1) * perPage,
         take: perPage,
       }),
-      prisma.booking.count({ where }),
+      prisma.booking.count({ where: paymentStatusFilter ? { ...where, ...paymentStatusFilter } : where }),
     ])
 
     const bookingsWithDetails = bookings.map((booking) => ({
@@ -53,6 +67,7 @@ export async function GET(request: NextRequest) {
       courtName: booking.court?.name,
       courtType: booking.court?.courtType?.name,
       thumbnail: booking.court?.thumbnail,
+      payment: booking.payments?.[0] || null,
     }))
 
     return NextResponse.json({
@@ -113,12 +128,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Court not found' }, { status: 404 })
     }
 
-    // Check availability
+    // Check availability - only confirmed/paid/completed bookings should block the slot
     const existingBooking = await prisma.booking.findFirst({
       where: {
         courtId: data.courtId,
         bookingDate: new Date(data.bookingDate),
-        status: { notIn: ['cancelled', 'expired'] },
+        status: { in: ['confirmed', 'paid', 'completed'] },
         OR: [
           {
             AND: [
@@ -197,16 +212,16 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create activity log
-    await prisma.activityLog.create({
-      data: {
-        userId,
-        action: 'booking_created',
-        description: `New booking created for ${court.name}`,
-        entityType: 'booking',
-        entityId: booking.id,
-      },
-    })
+    // Create activity log (commented out until migrations are run)
+    // await prisma.activityLog.create({
+    //   data: {
+    //     userId,
+    //     action: 'booking_created',
+    //     description: `New booking created for ${court.name}`,
+    //     entityType: 'booking',
+    //     entityId: booking.id,
+    //   },
+    // })
 
     // Create notification
     await prisma.notification.create({
