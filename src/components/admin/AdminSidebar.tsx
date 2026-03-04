@@ -6,14 +6,14 @@ import { useSession, signOut } from 'next-auth/react'
 import { useState } from 'react'
 
 const menuItems = [
-  { href: '/admin', label: 'Dashboard', icon: 'fa-tachometer-alt' },
-  { href: '/admin/bookings', label: 'Bookings', icon: 'fa-calendar-alt' },
-  { href: '/admin/payments', label: 'Payments', icon: 'fa-credit-card' },
-  { href: '/admin/courts', label: 'Courts', icon: 'fa-basketball-ball' },
-  { href: '/admin/users', label: 'Users', icon: 'fa-users' },
-  { href: '/admin/reports', label: 'Reports', icon: 'fa-chart-bar' },
+  { href: '/admin', label: 'Dashboard', icon: 'fa-grid-2' },
+  { href: '/admin/bookings', label: 'Bookings', icon: 'fa-calendar-check' },
+  { href: '/admin/payments', label: 'Payments', icon: 'fa-money-bill-wave' },
+  { href: '/admin/courts', label: 'Courts', icon: 'fa-basketball' },
+  { href: '/admin/users', label: 'Users', icon: 'fa-user-group' },
   { href: '/admin/scanner', label: 'QR Scanner', icon: 'fa-qrcode' },
-  { href: '/admin/settings', label: 'Settings', icon: 'fa-cog' },
+  { href: '/admin/reports', label: 'Reports', icon: 'fa-chart-pie' },
+  { href: '/admin/settings', label: 'Settings', icon: 'fa-gear' },
 ]
 
 export default function AdminSidebar() {
@@ -26,88 +26,100 @@ export default function AdminSidebar() {
   }
 
   const isActive = (href: string) => {
-    if (href === '/admin') {
-      return pathname === '/admin'
-    }
+    if (href === '/admin') return pathname === '/admin'
     return pathname.startsWith(href)
   }
 
+  const initials = session?.user?.name
+    ?.split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || 'A'
+
   return (
     <aside
-      className={`fixed left-0 top-0 h-full bg-gray-900 text-white transition-all duration-300 z-50 ${
-        collapsed ? 'w-16' : 'w-64'
+      className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 transition-all duration-300 z-50 flex flex-col ${
+        collapsed ? 'w-[72px]' : 'w-64'
       }`}
     >
       {/* Logo */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+      <div className={`flex items-center h-16 border-b border-gray-100 ${collapsed ? 'justify-center px-2' : 'px-5'}`}>
         {!collapsed && (
-          <Link href="/admin" className="flex items-center">
-            <i className="fas fa-basketball-ball text-ph-yellow text-xl mr-2"></i>
-            <span className="font-bold text-lg">Admin Panel</span>
+          <Link href="/admin" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-gradient-to-br from-ph-blue to-blue-600 rounded-lg flex items-center justify-center">
+              <i className="fas fa-basketball text-white text-xs"></i>
+            </div>
+            <span className="font-extrabold text-gray-900 tracking-tight">CourtReserve</span>
           </Link>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-2 rounded-lg hover:bg-gray-800 transition"
+          className={`p-2 rounded-lg hover:bg-gray-100 transition text-gray-400 hover:text-gray-600 ${collapsed ? '' : 'ml-auto'}`}
         >
-          <i className={`fas ${collapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i>
+          <i className={`fas text-xs ${collapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i>
         </button>
       </div>
 
       {/* User Info */}
       {!collapsed && session?.user && (
-        <div className="p-4 border-b border-gray-800">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-ph-blue rounded-full flex items-center justify-center mr-3">
-              <i className="fas fa-user"></i>
+        <div className="px-4 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-ph-blue to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0">
+              {initials}
             </div>
             <div className="overflow-hidden">
-              <p className="font-medium truncate">{session.user.name}</p>
-              <p className="text-xs text-gray-400 truncate">{session.user.email}</p>
+              <p className="font-semibold text-gray-900 text-sm truncate">{session.user.name}</p>
+              <p className="text-xs text-gray-400 truncate">Administrator</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Navigation */}
-      <nav className="p-2 flex-1 overflow-y-auto">
-        <ul className="space-y-1">
-          {menuItems.map((item) => (
-            <li key={item.href}>
+      <nav className="flex-1 overflow-y-auto py-3 px-3">
+        <div className="space-y-0.5">
+          {menuItems.map((item) => {
+            const active = isActive(item.href)
+            return (
               <Link
+                key={item.href}
                 href={item.href}
-                className={`flex items-center px-3 py-3 rounded-lg transition ${
-                  isActive(item.href)
-                    ? 'bg-ph-blue text-white'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                }`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
+                  active
+                    ? 'bg-ph-blue/10 text-ph-blue'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                } ${collapsed ? 'justify-center' : ''}`}
                 title={collapsed ? item.label : undefined}
               >
-                <i className={`fas ${item.icon} w-6 text-center`}></i>
-                {!collapsed && <span className="ml-3">{item.label}</span>}
+                <i className={`fas ${item.icon} w-5 text-center text-sm ${active ? 'text-ph-blue' : ''}`}></i>
+                {!collapsed && <span>{item.label}</span>}
               </Link>
-            </li>
-          ))}
-        </ul>
+            )
+          })}
+        </div>
       </nav>
 
       {/* Bottom Actions */}
-      <div className="absolute bottom-0 left-0 right-0 p-2 border-t border-gray-800">
-        <Link
+      <div className="border-t border-gray-100 p-3 space-y-0.5">
+        <a
           href="/"
-          className="flex items-center px-3 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition"
-          title={collapsed ? 'View Site' : undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-blue-50 hover:text-ph-blue transition ${collapsed ? 'justify-center' : ''}`}
+          title={collapsed ? 'Client View' : undefined}
         >
-          <i className="fas fa-external-link-alt w-6 text-center"></i>
-          {!collapsed && <span className="ml-3">View Site</span>}
-        </Link>
+          <i className="fas fa-eye w-5 text-center text-sm"></i>
+          {!collapsed && <span>Client View</span>}
+          {!collapsed && <i className="fas fa-arrow-up-right-from-square text-[10px] ml-auto text-gray-300"></i>}
+        </a>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center px-3 py-3 rounded-lg text-red-400 hover:bg-red-900/30 hover:text-red-300 transition"
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-red-500 hover:bg-red-50 hover:text-red-600 transition ${collapsed ? 'justify-center' : ''}`}
           title={collapsed ? 'Logout' : undefined}
         >
-          <i className="fas fa-sign-out-alt w-6 text-center"></i>
-          {!collapsed && <span className="ml-3">Logout</span>}
+          <i className="fas fa-right-from-bracket w-5 text-center text-sm"></i>
+          {!collapsed && <span>Logout</span>}
         </button>
       </div>
     </aside>

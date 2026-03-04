@@ -13,26 +13,12 @@ export async function GET(
       where: { id: parseInt(params.id) },
       include: {
         courtType: true,
-        reviews: {
-          include: {
-            user: {
-              select: { name: true },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
       },
     })
 
     if (!court) {
       return NextResponse.json({ error: 'Court not found' }, { status: 404 })
     }
-
-    const reviews = court.reviews.map((review) => ({
-      ...review,
-      userName: review.user?.name,
-    }))
 
     const courtWithDetails = {
       ...court,
@@ -47,7 +33,7 @@ export async function GET(
       amenities: court.amenities ? JSON.parse(court.amenities) : [],
     }
 
-    return NextResponse.json({ court: courtWithDetails, reviews })
+    return NextResponse.json({ court: courtWithDetails })
   } catch (error) {
     console.error('Error fetching court:', error)
     return NextResponse.json({ error: 'Failed to fetch court' }, { status: 500 })

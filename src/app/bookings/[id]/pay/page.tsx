@@ -9,6 +9,9 @@ interface Booking {
   id: number
   bookingCode: string
   totalAmount: number
+  downpaymentAmount: number
+  balanceAmount: number
+  paymentType: string | null
   court: {
     name: string
   }
@@ -31,7 +34,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
         if (!response.ok) throw new Error('Booking not found')
         const data = await response.json()
         
-        if (data.booking.status !== 'pending') {
+        if (data.booking.status !== 'confirmed') {
           toast.error('This booking has already been processed')
           router.push(`/bookings/${params.id}`)
           return
@@ -78,7 +81,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
       formData.append('proof', proofFile)
       formData.append('referenceNumber', referenceNumber)
       formData.append('bookingId', params.id)
-      formData.append('amount', String(booking?.totalAmount))
+      formData.append('amount', String(booking?.paymentType === 'venue' ? booking?.downpaymentAmount : booking?.totalAmount))
 
       const response = await fetch('/api/payments/upload-proof', {
         method: 'POST',
@@ -157,10 +160,26 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
 
         {/* Amount */}
         <div className="bg-ph-blue/5 border border-ph-blue/20 rounded-lg p-6 mb-6 text-center">
-          <p className="text-gray-600 mb-1">Amount to Pay</p>
-          <p className="text-4xl font-bold text-ph-blue">
-            {formatPrice(booking.totalAmount)}
-          </p>
+          {booking.paymentType === 'venue' ? (
+            <>
+              <p className="text-gray-600 mb-1">Downpayment Amount</p>
+              <p className="text-4xl font-bold text-ph-blue">
+                {formatPrice(booking.downpaymentAmount)}
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Total: {formatPrice(booking.totalAmount)} &middot; Remaining balance of{' '}
+                <span className="font-semibold text-orange-600">{formatPrice(booking.balanceAmount)}</span>{' '}
+                to be paid on-site
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-gray-600 mb-1">Amount to Pay</p>
+              <p className="text-4xl font-bold text-ph-blue">
+                {formatPrice(booking.totalAmount)}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Payment Instructions */}
@@ -172,7 +191,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
           <ol className="list-decimal list-inside text-sm text-gray-600 space-y-2">
             <li>Open your GCash app</li>
             <li>Scan the QR code below or send to: <strong>{gcashPhone}</strong></li>
-            <li>Enter the exact amount: <strong>{formatPrice(booking.totalAmount)}</strong></li>
+            <li>Enter the exact amount: <strong>{formatPrice(booking.paymentType === 'venue' ? booking.downpaymentAmount : booking.totalAmount)}</strong></li>
             <li>Take a screenshot of the payment confirmation</li>
             <li>Upload the screenshot below and enter the reference number</li>
           </ol>

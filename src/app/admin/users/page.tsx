@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -19,7 +19,7 @@ interface User {
   createdAt: string
 }
 
-export default function AdminUsersPage() {
+function UsersContent() {
   const searchParams = useSearchParams()
   const filter = searchParams.get('filter') || ''
 
@@ -111,33 +111,31 @@ export default function AdminUsersPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Manage Users</h1>
-        <p className="text-gray-600">View and manage user accounts</p>
+        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Users</h1>
+        <p className="text-gray-500 text-sm mt-1">View and manage user accounts</p>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-        <div className="flex flex-wrap items-center gap-2">
-          {filters.map((f) => (
-            <Link
-              key={f.value}
-              href={f.value ? `/admin/users?filter=${f.value}` : '/admin/users'}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                filter === f.value
-                  ? 'bg-ph-blue text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {f.label}
-            </Link>
-          ))}
-        </div>
+      <div className="flex flex-wrap items-center gap-1.5 mb-6">
+        {filters.map((f) => (
+          <Link
+            key={f.value}
+            href={f.value ? `/admin/users?filter=${f.value}` : '/admin/users'}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              filter === f.value
+                ? 'bg-ph-blue text-white shadow-sm'
+                : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900'
+            }`}
+          >
+            {f.label}
+          </Link>
+        ))}
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-100">
+          <thead className="bg-gray-50/80">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 User
@@ -310,5 +308,13 @@ export default function AdminUsersPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function AdminUsersPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><i className="fas fa-spinner fa-spin text-3xl text-ph-blue"></i></div>}>
+      <UsersContent />
+    </Suspense>
   )
 }

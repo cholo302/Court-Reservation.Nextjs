@@ -47,7 +47,6 @@ export interface Court {
   downpaymentPercent: number
   isActive: boolean
   rating: number
-  totalReviews: number
   createdAt: Date
   updatedAt: Date
   courtType?: CourtType

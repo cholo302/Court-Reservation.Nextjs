@@ -18,9 +18,8 @@ export async function GET() {
         name: true,
         email: true,
         phone: true,
-        avatar: true,
+        profileImage: true,
         createdAt: true,
-        preferences: true,
       },
     })
 
@@ -42,24 +41,15 @@ export async function GET() {
       completed: bookings.filter((b) => b.status === 'completed').length,
       totalSpent: bookings
         .filter((b) => ['paid', 'completed'].includes(b.status))
-        .reduce((sum, b) => sum + (b.totalAmount || 0), 0),
+        .reduce((sum, b) => sum + Number(b.totalAmount || 0), 0),
     }
 
-    // Parse preferences
-    let preferences = { sms: true, email: true }
-    if (user.preferences) {
-      try {
-        preferences = typeof user.preferences === 'string'
-          ? JSON.parse(user.preferences)
-          : user.preferences as { sms: boolean; email: boolean }
-      } catch (e) {
-        // Use default
-      }
-    }
+    const preferences = { sms: true, email: true }
 
     return NextResponse.json({
       user: {
         ...user,
+        avatar: user.profileImage,
         preferences,
       },
       stats,

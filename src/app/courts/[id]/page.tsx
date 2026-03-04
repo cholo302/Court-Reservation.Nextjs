@@ -13,14 +13,6 @@ interface TimeSlot {
   isPeak: boolean
 }
 
-interface Review {
-  id: number
-  rating: number
-  comment: string
-  userName: string
-  createdAt: string
-}
-
 interface Court {
   id: number
   name: string
@@ -32,7 +24,6 @@ interface Court {
   hourlyRate: number
   peakHourRate: number | null
   rating: number
-  totalReviews: number
   capacity: number | null
   amenities: string[]
   rules: string | null
@@ -55,7 +46,6 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
 
   const [court, setCourt] = useState<Court | null>(null)
   const [slots, setSlots] = useState<TimeSlot[] | null>(null)
-  const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([])
@@ -74,7 +64,6 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
         }
         const data = await response.json()
         setCourt(data.court)
-        setReviews(data.reviews || [])
       } catch (error) {
         console.error('Error fetching court:', error)
         toast.error('Court not found')
@@ -226,12 +215,6 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                 <span className="bg-white/90 text-ph-blue text-sm font-semibold px-3 py-1 rounded-full">
                   {court.courtType?.name || 'Court'}
                 </span>
-                {court.rating > 0 && (
-                  <span className="bg-ph-yellow text-ph-blue text-sm font-semibold px-3 py-1 rounded-full">
-                    <i className="fas fa-star mr-1"></i>
-                    {court.rating.toFixed(1)}
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -356,44 +339,6 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
               </span>
             </div>
           </div>
-
-          {/* Reviews */}
-          {reviews.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
-                <i className="fas fa-star mr-2 text-ph-yellow"></i>Reviews ({court.totalReviews})
-              </h3>
-
-              <div className="space-y-4">
-                {reviews.map((review) => (
-                  <div key={review.id} className="border-b pb-4">
-                    <div className="flex items-center mb-2">
-                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
-                        <i className="fas fa-user text-gray-500"></i>
-                      </div>
-                      <div>
-                        <p className="font-medium">{review.userName}</p>
-                        <div className="flex items-center text-sm text-yellow-400">
-                          {[...Array(5)].map((_, i) => (
-                            <i
-                              key={i}
-                              className={`fas fa-star ${
-                                i < review.rating ? 'text-yellow-400' : 'text-gray-300'
-                              }`}
-                            ></i>
-                          ))}
-                          <span className="text-gray-400 ml-2">
-                            {new Date(review.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    {review.comment && <p className="text-gray-600 text-sm">{review.comment}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Sidebar - Booking Card */}

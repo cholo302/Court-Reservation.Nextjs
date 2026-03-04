@@ -49,6 +49,7 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
   })
 
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([])
+  const [lastFetchedDate, setLastFetchedDate] = useState('')
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -92,13 +93,17 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
         )
         const data = await response.json()
         setSlots(data.slots || [])
-        setSelectedSlots([])
+        // Only clear selected slots if the date actually changed
+        if (lastFetchedDate && lastFetchedDate !== formData.bookingDate) {
+          setSelectedSlots([])
+        }
+        setLastFetchedDate(formData.bookingDate)
       } catch (error) {
         console.error('Error fetching slots:', error)
       }
     }
 
-    if (params.courtId) {
+    if (params.courtId && formData.bookingDate) {
       fetchSlots()
     }
   }, [params.courtId, formData.bookingDate])
@@ -184,7 +189,7 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
         throw new Error(data.error || 'Failed to create booking')
       }
 
-      toast.success('Booking created successfully!')
+      toast.success('Booking confirmed! Complete your payment.')
       router.push(`/bookings/${data.booking.id}/pay`)
     } catch (error: any) {
       toast.error(error.message || 'Failed to create booking')
@@ -356,7 +361,7 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
                   <div className="text-center peer-checked:text-ph-blue">
                     <i className="fas fa-qrcode text-2xl mb-2"></i>
                     <p className="font-medium">Pay Now (QR)</p>
-                    <p className="text-xs text-gray-500">GCash</p>
+                    <p className="text-xs text-gray-500">Full payment via GCash</p>
                   </div>
                   <div className="absolute inset-0 border-2 border-transparent peer-checked:border-ph-blue rounded-lg"></div>
                 </label>
@@ -373,9 +378,9 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
                     className="sr-only peer"
                   />
                   <div className="text-center peer-checked:text-ph-blue">
-                    <i className="fas fa-money-bill-wave text-2xl mb-2"></i>
-                    <p className="font-medium">Pay On-site</p>
-                    <p className="text-xs text-gray-500">Cash/Card</p>
+                    <i className="fas fa-hand-holding-usd text-2xl mb-2"></i>
+                    <p className="font-medium">Downpayment</p>
+                    <p className="text-xs text-gray-500">Pay 50% now, balance on-site</p>
                   </div>
                   <div className="absolute inset-0 border-2 border-transparent peer-checked:border-ph-blue rounded-lg"></div>
                 </label>
@@ -442,13 +447,29 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
               </div>
             </div>
 
-            <div className="border-t pt-4">
+            <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between">
                 <span className="font-semibold">Total</span>
                 <span className="text-2xl font-bold text-ph-blue">
                   {formatPrice(calculateTotal())}
                 </span>
               </div>
+              {formData.paymentType === 'venue' && calculateTotal() > 0 && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Downpayment (50%)</span>
+                    <span className="font-medium text-green-600">
+                      {formatPrice(Math.ceil(calculateTotal() * 0.5))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Balance (pay on-site)</span>
+                    <span className="font-medium text-orange-600">
+                      {formatPrice(calculateTotal() - Math.ceil(calculateTotal() * 0.5))}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -12,7 +12,6 @@ interface Court {
   hourlyRate: number
   isActive: boolean
   rating: number
-  totalReviews: number
   thumbnail: string | null
 }
 
@@ -91,12 +90,12 @@ export default function AdminCourtsPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Manage Courts</h1>
-          <p className="text-gray-600">Add, edit, and manage court facilities</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Courts</h1>
+          <p className="text-gray-500 text-sm mt-1">Add, edit, and manage court facilities</p>
         </div>
         <Link
           href="/admin/courts/create"
-          className="bg-ph-blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+          className="bg-ph-blue text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition flex items-center gap-2"
         >
           <i className="fas fa-plus"></i>
           Add Court
@@ -203,19 +202,6 @@ export default function AdminCourtsPage() {
                     {court.location}
                   </p>
                 )}
-
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex items-center text-yellow-500">
-                    <i className="fas fa-star text-sm"></i>
-                    <span className="ml-1 text-sm text-gray-700">
-                      {Number(court.rating).toFixed(1)}
-                    </span>
-                  </div>
-                  <span className="text-gray-300">|</span>
-                  <span className="text-sm text-gray-500">
-                    {court.totalReviews} reviews
-                  </span>
-                </div>
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-4 border-t">

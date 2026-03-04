@@ -103,18 +103,27 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-ph-blue to-blue-800"></div>
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-20 right-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-10 w-96 h-96 bg-ph-yellow rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="max-w-md w-full relative z-10">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center">
-            <i className="fas fa-basketball-ball text-ph-blue text-3xl mr-2"></i>
-            <span className="text-2xl font-bold text-ph-blue">Court Reservation</span>
+          <Link href="/" className="inline-flex items-center gap-2 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-ph-yellow to-yellow-400 rounded-xl flex items-center justify-center shadow-lg">
+              <i className="fas fa-basketball text-ph-blue"></i>
+            </div>
+            <span className="text-2xl font-extrabold text-white tracking-tight">CourtReserve</span>
           </Link>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">Create Account</h2>
-          <p className="mt-2 text-gray-600">Join and start booking courts</p>
+          <h2 className="mt-8 text-3xl font-extrabold text-white">Create Account</h2>
+          <p className="mt-2 text-blue-200">Join and start booking courts</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -362,7 +371,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-ph-blue text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-ph-blue to-blue-600 text-white py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
             >
               {isLoading ? (
                 <>
@@ -405,9 +414,9 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <p className="mt-6 text-center text-gray-600">
+        <p className="mt-8 text-center text-blue-200">
           Already have an account?{' '}
-          <Link href="/login" className="text-ph-blue font-semibold hover:text-blue-800">
+          <Link href="/login" className="text-white font-bold hover:underline">
             Sign in
           </Link>
         </p>

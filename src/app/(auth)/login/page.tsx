@@ -1,12 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
@@ -54,19 +54,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-ph-blue to-blue-800"></div>
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-ph-yellow rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="max-w-md w-full relative z-10">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center">
-            <i className="fas fa-basketball-ball text-ph-blue text-3xl mr-2"></i>
-            <span className="text-2xl font-bold text-ph-blue">Court Reservation</span>
+          <Link href="/" className="inline-flex items-center gap-2 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-ph-yellow to-yellow-400 rounded-xl flex items-center justify-center shadow-lg">
+              <i className="fas fa-basketball text-ph-blue"></i>
+            </div>
+            <span className="text-2xl font-extrabold text-white tracking-tight">CourtReserve</span>
           </Link>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">Welcome back!</h2>
-          <p className="mt-2 text-gray-600">Sign in to your account</p>
+          <h2 className="mt-8 text-3xl font-extrabold text-white">Welcome back!</h2>
+          <p className="mt-2 text-blue-200">Sign in to your account</p>
         </div>
 
         {error && (
-          <div className="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+          <div className="mb-4 bg-red-500/10 backdrop-blur-sm border border-red-400/20 text-red-200 p-4 rounded-xl">
             <p>
               <i className="fas fa-exclamation-circle mr-2"></i>
               {error === 'CredentialsSignin'
@@ -76,14 +85,14 @@ export default function LoginPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Email Address
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <i className="fas fa-envelope text-gray-400"></i>
                 </div>
                 <input
@@ -93,18 +102,18 @@ export default function LoginPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
+                  className="block w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ph-blue focus:border-transparent focus:bg-white transition-colors text-sm"
                   placeholder="juan@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                   <i className="fas fa-lock text-gray-400"></i>
                 </div>
                 <input
@@ -114,7 +123,7 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
+                  className="block w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ph-blue focus:border-transparent focus:bg-white transition-colors text-sm"
                   placeholder="••••••••"
                 />
               </div>
@@ -130,11 +139,11 @@ export default function LoginPage() {
                   onChange={(e) => setFormData({ ...formData, remember: e.target.checked })}
                   className="h-4 w-4 text-ph-blue focus:ring-ph-blue border-gray-300 rounded"
                 />
-                <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
+                <label htmlFor="remember" className="ml-2 text-sm text-gray-500">
                   Remember me
                 </label>
               </div>
-              <Link href="/forgot-password" className="text-sm text-ph-blue hover:text-blue-800">
+              <Link href="/forgot-password" className="text-sm text-ph-blue hover:text-blue-700 font-semibold">
                 Forgot password?
               </Link>
             </div>
@@ -142,7 +151,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-ph-blue text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-ph-blue to-blue-600 text-white py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
             >
               {isLoading ? (
                 <>
@@ -150,7 +159,7 @@ export default function LoginPage() {
                 </>
               ) : (
                 <>
-                  <i className="fas fa-sign-in-alt mr-2"></i> Sign In
+                  Sign In <i className="fas fa-arrow-right ml-2 text-sm"></i>
                 </>
               )}
             </button>
@@ -159,10 +168,10 @@ export default function LoginPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                <span className="px-3 bg-white text-gray-400">or</span>
               </div>
             </div>
 
@@ -170,30 +179,42 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => signIn('facebook', { callbackUrl })}
-                className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                className="flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition"
               >
-                <i className="fab fa-facebook text-blue-600 text-xl mr-2"></i>
-                <span className="text-sm font-medium text-gray-700">Facebook</span>
+                <i className="fab fa-facebook text-blue-600 text-lg mr-2"></i>
+                <span className="text-sm font-medium text-gray-600">Facebook</span>
               </button>
               <button
                 type="button"
                 onClick={() => signIn('google', { callbackUrl })}
-                className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                className="flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition"
               >
-                <i className="fab fa-google text-red-500 text-xl mr-2"></i>
-                <span className="text-sm font-medium text-gray-700">Google</span>
+                <i className="fab fa-google text-red-500 text-lg mr-2"></i>
+                <span className="text-sm font-medium text-gray-600">Google</span>
               </button>
             </div>
           </div>
         </div>
 
-        <p className="mt-6 text-center text-gray-600">
+        <p className="mt-8 text-center text-blue-200">
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-ph-blue font-semibold hover:text-blue-800">
+          <Link href="/register" className="text-white font-bold hover:underline">
             Sign up
           </Link>
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-ph-blue to-blue-800">
+        <i className="fas fa-spinner fa-spin text-4xl text-white"></i>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }

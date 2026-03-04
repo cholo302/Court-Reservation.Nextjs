@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -13,20 +13,21 @@ interface Booking {
   endTime: string
   totalAmount: number
   status: string
+  paymentStatus: string
   courtName: string
   userName: string
   userEmail: string
 }
 
-const statusConfig: Record<string, { bg: string; text: string }> = {
-  pending: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
-  confirmed: { bg: 'bg-blue-100', text: 'text-blue-800' },
-  paid: { bg: 'bg-green-100', text: 'text-green-800' },
-  completed: { bg: 'bg-green-100', text: 'text-green-800' },
-  cancelled: { bg: 'bg-red-100', text: 'text-red-800' },
+const statusConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
+  pending: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', label: 'Pending' },
+  confirmed: { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-400', label: 'Confirmed' },
+  paid: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-400', label: 'Paid' },
+  completed: { bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-400', label: 'Completed' },
+  cancelled: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-400', label: 'Cancelled' },
 }
 
-export default function AdminBookingsPage() {
+function BookingsContent() {
   const searchParams = useSearchParams()
   const currentStatus = searchParams.get('status') || ''
 
@@ -38,7 +39,6 @@ export default function AdminBookingsPage() {
       try {
         const params = new URLSearchParams()
         if (currentStatus) params.set('status', currentStatus)
-
         const response = await fetch(`/api/admin/bookings?${params.toString()}`)
         const data = await response.json()
         setBookings(data.items || [])
@@ -48,178 +48,160 @@ export default function AdminBookingsPage() {
         setLoading(false)
       }
     }
-
     fetchBookings()
   }, [currentStatus])
 
   const handleAction = async (bookingId: number, action: string) => {
     if (action === 'cancel' && !confirm('Cancel this booking?')) return
-
     try {
       const response = await fetch(`/api/admin/bookings/${bookingId}?action=${action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       })
-
       if (!response.ok) throw new Error('Failed')
-
       toast.success(`Booking ${action}ed successfully`)
       setBookings((prev) =>
         prev.map((b) => (b.id === bookingId ? { ...b, status: action === 'confirm' ? 'confirmed' : action === 'cancel' ? 'cancelled' : b.status } : b))
       )
-    } catch (error) {
+    } catch {
       toast.error('Action failed')
     }
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price)
-  }
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price)
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
-  const formatTime = (time: string) => {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-  }
+  const formatTime = (time: string) =>
+    new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+      <div className="flex items-center justify-center py-20">
+        <i className="fas fa-spinner fa-spin text-3xl text-ph-blue"></i>
       </div>
     )
   }
 
-  const statuses = ['', 'pending', 'confirmed', 'paid', 'completed', 'cancelled']
+  const statuses = ['', 'confirmed', 'paid', 'completed', 'cancelled']
+  const statusCounts = statuses.reduce((acc, s) => {
+    acc[s] = s ? bookings.filter((b) => b.status === s).length : bookings.length
+    return acc
+  }, {} as Record<string, number>)
 
   return (
     <div>
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Manage Bookings</h1>
-        <p className="text-gray-600">View and manage all court reservations</p>
+        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Bookings</h1>
+        <p className="text-gray-500 text-sm mt-1">View and manage all court reservations</p>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-        <div className="flex flex-wrap items-center gap-2">
-          {statuses.map((s) => (
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-6">
+        {statuses.map((s) => {
+          const isActive = currentStatus === s
+          return (
             <Link
               key={s}
               href={s ? `/admin/bookings?status=${s}` : '/admin/bookings'}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                currentStatus === s
-                  ? 'bg-ph-blue text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-ph-blue text-white shadow-sm'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900'
               }`}
             >
               {s ? s.charAt(0).toUpperCase() + s.slice(1) : 'All'}
+              {!isActive && statusCounts[s] > 0 && (
+                <span className="ml-1.5 text-[10px] text-gray-400">{statusCounts[s]}</span>
+              )}
             </Link>
-          ))}
-        </div>
+          )
+        })}
       </div>
 
-      {/* Bookings Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Booking
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Customer
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Date & Time
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {bookings.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                  <i className="fas fa-calendar-times text-4xl mb-2"></i>
-                  <p>No bookings found</p>
-                </td>
-              </tr>
-            ) : (
-              bookings.map((booking) => {
-                const config = statusConfig[booking.status] || statusConfig.pending
-                return (
-                  <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium">{booking.bookingCode}</p>
-                        <p className="text-sm text-gray-500">{booking.courtName}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="font-medium">{booking.userName}</p>
-                        <p className="text-sm text-gray-500">{booking.userEmail}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div>
-                        <p>{formatDate(booking.bookingDate)}</p>
-                        <p className="text-sm text-gray-500">
-                          {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-semibold text-ph-blue">{formatPrice(booking.totalAmount)}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`${config.bg} ${config.text} px-3 py-1 rounded-full text-xs font-medium`}>
-                        {booking.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/bookings/${booking.id}`}
-                          className="text-ph-blue hover:underline text-sm"
-                        >
-                          View
-                        </Link>
-                        {booking.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => handleAction(booking.id, 'confirm')}
-                              className="text-green-600 hover:underline text-sm"
-                            >
-                              Confirm
-                            </button>
-                            <button
-                              onClick={() => handleAction(booking.id, 'cancel')}
-                              className="text-red-600 hover:underline text-sm"
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })
-            )}
-          </tbody>
-        </table>
+      {/* Bookings List */}
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        {/* Table Header */}
+        <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50/80 border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <div className="col-span-3">Booking</div>
+          <div className="col-span-2">Customer</div>
+          <div className="col-span-2">Schedule</div>
+          <div className="col-span-1">Amount</div>
+          <div className="col-span-2">Status</div>
+          <div className="col-span-2">Actions</div>
+        </div>
+
+        {bookings.length === 0 ? (
+          <div className="px-5 py-16 text-center">
+            <i className="fas fa-calendar-xmark text-gray-200 text-4xl mb-3"></i>
+            <p className="text-sm text-gray-400">No bookings found</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {bookings.map((booking) => {
+              const config = statusConfig[booking.status] || statusConfig.pending
+              return (
+                <div
+                  key={booking.id}
+                  className="grid grid-cols-12 gap-4 px-5 py-3.5 items-center hover:bg-gray-50/50 transition"
+                >
+                  <div className="col-span-3 min-w-0">
+                    <p className="font-semibold text-sm text-gray-900">{booking.bookingCode}</p>
+                    <p className="text-xs text-gray-400 truncate">{booking.courtName}</p>
+                  </div>
+                  <div className="col-span-2 min-w-0">
+                    <p className="text-sm text-gray-900 truncate">{booking.userName}</p>
+                    <p className="text-xs text-gray-400 truncate">{booking.userEmail}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm text-gray-900">{formatDate(booking.bookingDate)}</p>
+                    <p className="text-xs text-gray-400">
+                      {formatTime(booking.startTime)}-{formatTime(booking.endTime)}
+                    </p>
+                  </div>
+                  <div className="col-span-1">
+                    <p className="text-sm font-bold text-gray-900">{formatPrice(booking.totalAmount)}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`}></span>
+                      {config.label}
+                    </span>
+                  </div>
+                  <div className="col-span-2 flex items-center gap-1.5">
+                    <Link
+                      href={`/admin/bookings/${booking.id}`}
+                      className="px-2.5 py-1.5 bg-gray-50 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-100 transition"
+                    >
+                      View
+                    </Link>
+                    {booking.status === 'confirmed' && !booking.paymentStatus?.includes('paid') && (
+                      <button
+                        onClick={() => handleAction(booking.id, 'cancel')}
+                        className="px-2.5 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
+  )
+}
+
+export default function AdminBookingsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><i className="fas fa-spinner fa-spin text-3xl text-ph-blue"></i></div>}>
+      <BookingsContent />
+    </Suspense>
   )
 }

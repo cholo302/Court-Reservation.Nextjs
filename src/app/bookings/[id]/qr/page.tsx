@@ -15,6 +15,9 @@ interface BookingDetails {
   courtName: string
   courtLocation: string
   totalAmount: number
+  downpaymentAmount: number
+  balanceAmount: number
+  paymentType: string | null
   entryQrCode: string | null
 }
 
@@ -41,6 +44,9 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
           courtName: b.courtName || b.court?.name,
           courtLocation: b.courtLocation || b.court?.location,
           totalAmount: Number(b.totalAmount),
+          downpaymentAmount: Number(b.downpaymentAmount),
+          balanceAmount: Number(b.balanceAmount),
+          paymentType: b.paymentType,
           entryQrCode: b.entryQrCode,
         })
       } catch (error) {
@@ -185,7 +191,12 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
         {/* QR Card - Printable */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden" id="qr-card">
           {/* Header */}
-          <div className="bg-gradient-to-r from-ph-blue to-blue-600 text-white p-6 text-center">
+          <div className="bg-gradient-to-r from-ph-blue to-blue-600 text-white p-6 text-center relative">
+            {booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
+              <span className="absolute top-3 right-3 bg-orange-400 text-white text-xs font-bold px-3 py-1 rounded-full">
+                DOWNPAYMENT
+              </span>
+            )}
             <h1 className="text-xl font-bold mb-1">Entry Pass</h1>
             <p className="text-blue-100 text-sm">Show this QR code at the venue</p>
           </div>
@@ -225,17 +236,41 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Amount</span>
-                <span className="font-semibold text-green-600">{formatPrice(booking.totalAmount)}</span>
+                <span className="font-semibold text-green-600">
+                  {booking.paymentType === 'venue' && booking.balanceAmount > 0
+                    ? formatPrice(booking.downpaymentAmount)
+                    : formatPrice(booking.totalAmount)
+                  }
+                </span>
               </div>
+              {booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Downpayment Paid</span>
+                    <span className="font-medium text-green-600">{formatPrice(booking.downpaymentAmount)}</span>
+                  </div>
+                  <div className="flex justify-between bg-orange-50 -mx-2 px-2 py-1 rounded">
+                    <span className="text-orange-700 font-medium">Remaining Balance</span>
+                    <span className="font-bold text-orange-600">{formatPrice(booking.balanceAmount)}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-500">Status</span>
-                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  booking.status === 'paid' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-blue-100 text-blue-800'
-                }`}>
-                  {booking.status.toUpperCase()}
-                </span>
+                <div className="flex gap-1">
+                  {booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                      Downpayment
+                    </span>
+                  )}
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                    booking.status === 'paid' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {booking.status.toUpperCase()}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -267,6 +302,22 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
           </button>
         </div>
 
+        {/* Balance Due Notice */}
+        {booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
+          <div className="mt-6 bg-orange-50 border border-orange-300 rounded-xl p-4 print:hidden">
+            <h3 className="font-semibold text-orange-900 mb-2">
+              <i className="fas fa-exclamation-triangle mr-2"></i>
+              Balance Payment Due
+            </h3>
+            <p className="text-sm text-orange-800 mb-2">
+              You still need to pay <strong>{formatPrice(booking.balanceAmount)}</strong> on-site when you arrive.
+            </p>
+            <p className="text-xs text-orange-700">
+              Total: {formatPrice(booking.totalAmount)} | Already paid: {formatPrice(booking.downpaymentAmount)}
+            </p>
+          </div>
+        )}
+
         {/* Instructions */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 print:hidden">
           <h3 className="font-medium text-blue-900 mb-2">
@@ -278,6 +329,9 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
             <li>• Show this QR code to the staff for check-in</li>
             <li>• Bring a valid ID for verification</li>
             <li>• Make sure your phone has enough battery</li>
+            {booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
+              <li>• Bring payment for the remaining balance: <strong>{formatPrice(booking.balanceAmount)}</strong></li>
+            )}
           </ul>
         </div>
       </div>

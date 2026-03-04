@@ -75,18 +75,18 @@ export default function AdminReportsPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-gray-600">View business insights and statistics</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Reports</h1>
+          <p className="text-gray-500 text-sm mt-1">Business insights and analytics</p>
         </div>
         <div className="flex gap-2">
           {['week', 'month', 'year', 'all'].map((range) => (
             <button
               key={range}
               onClick={() => setDateRange(range)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 dateRange === range
-                  ? 'bg-ph-blue text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-ph-blue text-white shadow-sm'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900'
               }`}
             >
               {range === 'all' ? 'All Time' : `This ${range.charAt(0).toUpperCase() + range.slice(1)}`}
@@ -96,52 +96,42 @@ export default function AdminReportsPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Bookings</p>
-              <p className="text-3xl font-bold text-gray-900">{data?.totalBookings || 0}</p>
-            </div>
-            <div className="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center">
-              <i className="fas fa-calendar-check text-2xl text-blue-600"></i>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <i className="fas fa-calendar-check text-ph-blue text-sm"></i>
             </div>
           </div>
+          <p className="text-2xl font-extrabold text-gray-900">{data?.totalBookings || 0}</p>
+          <p className="text-xs text-gray-400 mt-1">Total bookings</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Revenue</p>
-              <p className="text-3xl font-bold text-green-600">
-                {formatPrice(data?.totalRevenue || 0)}
-              </p>
-            </div>
-            <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center">
-              <i className="fas fa-peso-sign text-2xl text-green-600"></i>
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+              <i className="fas fa-peso-sign text-green-600 text-sm"></i>
             </div>
           </div>
+          <p className="text-2xl font-extrabold text-gray-900">{formatPrice(data?.totalRevenue || 0)}</p>
+          <p className="text-xs text-gray-400 mt-1">Total revenue</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Registered Users</p>
-              <p className="text-3xl font-bold text-gray-900">{data?.totalUsers || 0}</p>
-            </div>
-            <div className="w-14 h-14 bg-purple-100 rounded-xl flex items-center justify-center">
-              <i className="fas fa-users text-2xl text-purple-600"></i>
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+              <i className="fas fa-user-group text-purple-600 text-sm"></i>
             </div>
           </div>
+          <p className="text-2xl font-extrabold text-gray-900">{data?.totalUsers || 0}</p>
+          <p className="text-xs text-gray-400 mt-1">Registered users</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Active Courts</p>
-              <p className="text-3xl font-bold text-gray-900">{data?.totalCourts || 0}</p>
-            </div>
-            <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center">
-              <i className="fas fa-basketball text-2xl text-orange-600"></i>
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center">
+              <i className="fas fa-basketball text-orange-600 text-sm"></i>
             </div>
           </div>
+          <p className="text-2xl font-extrabold text-gray-900">{data?.totalCourts || 0}</p>
+          <p className="text-xs text-gray-400 mt-1">Active courts</p>
         </div>
       </div>
 

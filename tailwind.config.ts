@@ -16,7 +16,7 @@ const config: Config = {
         'secondary': '#CE1126',
       },
       fontFamily: {
-        'poppins': ['Poppins', 'sans-serif'],
+        'sans': ['Inter', 'Poppins', 'system-ui', 'sans-serif'],
       },
     },
   },

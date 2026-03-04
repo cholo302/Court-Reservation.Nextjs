@@ -128,12 +128,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Court not found' }, { status: 404 })
     }
 
-    // Check availability - only confirmed/paid/completed bookings should block the slot
+    // Check availability - only PAID bookings should block the slot
+    // Unpaid bookings (even if confirmed) don't reserve the slot
     const existingBooking = await prisma.booking.findFirst({
       where: {
         courtId: data.courtId,
         bookingDate: new Date(data.bookingDate),
         status: { in: ['confirmed', 'paid', 'completed'] },
+        paymentStatus: { in: ['paid', 'partial', 'downpayment'] },
         OR: [
           {
             AND: [
@@ -197,7 +199,8 @@ export async function POST(request: NextRequest) {
         totalAmount,
         downpaymentAmount,
         balanceAmount,
-        status: 'pending',
+        status: 'confirmed',
+        confirmedAt: new Date(),
         paymentStatus: 'unpaid',
         paymentType: data.paymentType || 'online',
         playerCount: data.playerCount,

@@ -23,13 +23,13 @@ export function formatPrice(amount: number | string | null): string {
 export function formatDate(date: Date | string, format: 'short' | 'long' | 'full' = 'short'): string {
   const d = typeof date === 'string' ? new Date(date) : date
   
-  const options: Intl.DateTimeFormatOptions = {
+  const optionsMap: Record<string, Intl.DateTimeFormatOptions> = {
     short: { month: 'short', day: 'numeric', year: 'numeric' },
     long: { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' },
     full: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' },
-  }[format]
+  }
   
-  return d.toLocaleDateString('en-PH', options)
+  return d.toLocaleDateString('en-PH', optionsMap[format])
 }
 
 // Format time for display

@@ -154,7 +154,7 @@ model Payment {
   transactionId    String?   @map("transaction_id")
   gatewayResponse  String?   @map("gateway_response")
   proofScreenshot  String?   @map("proof_screenshot")
-  status           String    @default("pending") // pending, processing, paid, rejected, refunded
+  status           String    @default("pending") // pending, processing, downpayment, paid, rejected, refunded
   verifiedBy       Int?      @map("verified_by")
   verifiedAt       DateTime? @map("verified_at")
   refundAmount     Decimal?  @map("refund_amount")

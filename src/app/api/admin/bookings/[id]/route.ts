@@ -36,29 +36,6 @@ export async function POST(
     let updatedBooking
 
     switch (action) {
-      case 'confirm':
-        updatedBooking = await prisma.booking.update({
-          where: { id: booking.id },
-          data: {
-            status: 'confirmed',
-            confirmedAt: new Date(),
-            adminNotes: data.adminNotes,
-          },
-        })
-
-        // Create notification for user
-        await prisma.notification.create({
-          data: {
-            userId: booking.userId,
-            type: 'booking_confirmed',
-            title: 'Booking Confirmed',
-            message: `Your booking for ${booking.court?.name} has been confirmed.`,
-            data: JSON.stringify({ bookingId: booking.id }),
-            channel: 'web',
-          },
-        })
-        break
-
       case 'cancel':
         updatedBooking = await prisma.booking.update({
           where: { id: booking.id },

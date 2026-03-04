@@ -18,6 +18,9 @@ export async function GET(request: NextRequest) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
     const startOfWeek = new Date(today)
     startOfWeek.setDate(today.getDate() - today.getDay())
 
@@ -31,10 +34,10 @@ export async function GET(request: NextRequest) {
     else if (range === 'month') rangeStart = startOfMonth
     else if (range === 'year') rangeStart = startOfYear
 
-    // Today's stats
+    // Today's stats (use range to handle time components)
     const todayBookings = await prisma.booking.findMany({
       where: {
-        bookingDate: today,
+        bookingDate: { gte: today, lt: tomorrow },
       },
     })
 
@@ -135,17 +138,7 @@ export async function GET(request: NextRequest) {
       bookingDate: b.bookingDate,
     }))
 
-    // Pending items
-    const pendingBookings = await prisma.booking.findMany({
-      where: { status: 'pending' },
-      include: {
-        court: true,
-        user: { select: { name: true, phone: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    })
-
+    // Pending payments needing verification
     const pendingPayments = await prisma.payment.findMany({
       where: { status: { in: ['pending', 'processing'] } },
       include: {
@@ -156,6 +149,14 @@ export async function GET(request: NextRequest) {
       take: 10,
     })
 
+    // Also count confirmed bookings that haven't paid yet (awaiting payment)
+    const awaitingPaymentCount = await prisma.booking.count({
+      where: {
+        status: 'confirmed',
+        paymentStatus: { in: ['unpaid', 'partial'] },
+      },
+    })
+
     // Upcoming bookings
     const upcomingBookings = await prisma.booking.findMany({
       where: {
@@ -164,6 +165,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         court: { include: { courtType: true } },
+        user: { select: { name: true } },
       },
       orderBy: [{ bookingDate: 'asc' }, { startTime: 'asc' }],
       take: 10,
@@ -200,13 +202,7 @@ export async function GET(request: NextRequest) {
           revenue: monthRevenue,
         },
       },
-      pendingBookings: pendingBookings.map((b) => ({
-        ...b,
-        totalAmount: Number(b.totalAmount),
-        courtName: b.court?.name,
-        userName: b.user?.name,
-        userPhone: b.user?.phone,
-      })),
+      pendingBookings: [],
       pendingPayments: pendingPayments.map((p) => ({
         ...p,
         amount: Number(p.amount),
@@ -214,11 +210,13 @@ export async function GET(request: NextRequest) {
         courtName: p.booking?.court?.name,
         userName: p.user?.name,
       })),
+      awaitingPaymentCount,
       upcomingBookings: upcomingBookings.map((b) => ({
         ...b,
         totalAmount: Number(b.totalAmount),
         courtName: b.court?.name,
         courtType: b.court?.courtType?.name,
+        userName: b.user?.name,
       })),
     })
   } catch (error) {

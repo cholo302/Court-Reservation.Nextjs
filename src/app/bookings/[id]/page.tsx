@@ -14,6 +14,9 @@ interface Booking {
   endTime: string
   playerCount: number
   totalAmount: number
+  downpaymentAmount: number
+  balanceAmount: number
+  paymentType: string | null
   isHalfCourt: boolean
   notes: string | null
   createdAt: string
@@ -165,6 +168,11 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                 <i className={`fas ${config.icon} mr-1`}></i>
                 {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
               </span>
+              {booking.payment?.status === 'downpayment' && (
+                <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                  <i className="fas fa-hand-holding-usd mr-1"></i>Downpayment
+                </span>
+              )}
               {booking.payment?.status === 'paid' && (
                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
                   <i className="fas fa-check-circle mr-1"></i>Paid
@@ -178,7 +186,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
           </div>
 
           <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
-            {booking.status === 'pending' && !booking.payment && (
+            {booking.status === 'confirmed' && !booking.payment && (
               <>
                 <Link
                   href={`/bookings/${booking.id}/pay`}
@@ -196,21 +204,26 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
             )}
 
             {booking.payment?.status === 'processing' && (
-              <button
-                disabled
-                className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium cursor-not-allowed"
+              <span
+                className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium"
               >
-                <i className="fas fa-hourglass-half mr-2"></i>Awaiting Verification
-              </button>
+                <i className="fas fa-hourglass-half mr-2"></i>Awaiting Payment Verification
+              </span>
             )}
 
-            {['paid', 'confirmed'].includes(booking.status) && (
+            {(booking.payment?.status === 'downpayment' || booking.payment?.status === 'paid') && (
               <Link
                 href={`/bookings/${booking.id}/qr`}
                 className="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition"
               >
                 <i className="fas fa-qrcode mr-2"></i>View QR Code
               </Link>
+            )}
+
+            {booking.status === 'completed' && (
+              <span className="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">
+                <i className="fas fa-check-double mr-2"></i>Checked In
+              </span>
             )}
           </div>
         </div>
@@ -311,6 +324,8 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                   className={`font-medium capitalize ${
                     booking.payment.status === 'paid'
                       ? 'text-green-600'
+                      : booking.payment.status === 'downpayment'
+                      ? 'text-orange-600'
                       : booking.payment.status === 'processing'
                       ? 'text-blue-600'
                       : booking.payment.status === 'rejected'
@@ -318,14 +333,22 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                       : 'text-yellow-600'
                   }`}
                 >
-                  {booking.payment.status === 'paid' ? 'Verified' : 
-                   booking.payment.status === 'processing' ? 'Awaiting Verification' : 
-                   booking.payment.status}
+                  {booking.payment.status === 'paid' && booking.paymentType === 'venue'
+                    ? 'Fully Paid'
+                    : booking.payment.status === 'paid'
+                    ? 'Verified'
+                    : booking.payment.status === 'downpayment'
+                    ? 'Downpayment Verified'
+                    : booking.payment.status === 'processing'
+                    ? 'Awaiting Verification'
+                    : booking.payment.status}
                 </span>
               </div>
               <div className="flex justify-between border-t pt-3">
                 <span className="font-semibold">
-                  {booking.payment.status === 'paid' ? 'Amount Paid' : 'Amount Submitted'}
+                  {booking.payment.status === 'paid' ? 'Amount Paid' : 
+                   booking.payment.status === 'downpayment' ? 'Downpayment Paid' : 
+                   'Amount Submitted'}
                 </span>
                 <span className="text-xl font-bold text-ph-blue">
                   {formatPrice(booking.payment.amount)}
@@ -347,6 +370,22 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
                   </p>
                 </div>
               )}
+              {booking.payment.status === 'downpayment' && booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mt-2">
+                  <p className="text-sm text-orange-700">
+                    <i className="fas fa-exclamation-triangle mr-1"></i>
+                    <strong>Remaining Balance:</strong> {formatPrice(booking.balanceAmount)} — to be paid on-site at the venue.
+                  </p>
+                </div>
+              )}
+              {booking.payment.status === 'paid' && booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
+                  <p className="text-sm text-green-700">
+                    <i className="fas fa-check-circle mr-1"></i>
+                    <strong>Fully Paid:</strong> Total of {formatPrice(booking.totalAmount)} has been collected (downpayment + balance).
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-4">
@@ -355,7 +394,7 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
               <p className="text-2xl font-bold text-ph-blue mt-2">
                 {formatPrice(booking.totalAmount)}
               </p>
-              {booking.status === 'pending' && (
+              {booking.status === 'confirmed' && (
                 <Link
                   href={`/bookings/${booking.id}/pay`}
                   className="inline-block mt-4 bg-ph-blue text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-800 transition"

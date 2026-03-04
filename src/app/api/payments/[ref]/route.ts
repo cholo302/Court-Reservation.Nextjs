@@ -101,24 +101,36 @@ export async function POST(
         )
       }
 
+      // Get booking to check if it's a downpayment
+      const booking = await prisma.booking.findUnique({
+        where: { id: payment.bookingId },
+      })
+
+      if (!booking) {
+        return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+      }
+
+      // For downpayment bookings, set payment status to 'downpayment'
+      // For full payment bookings, set payment status to 'paid'
+      const isDownpayment = booking.paymentType === 'venue'
+      const paymentStatus = isDownpayment ? 'downpayment' : 'paid'
+
       const updatedPayment = await prisma.payment.update({
         where: { paymentReference: params.ref },
         data: {
-          status: 'paid',
+          status: paymentStatus,
           verifiedBy: parseInt(session.user.id),
           verifiedAt: new Date(),
           paidAt: new Date(),
         },
       })
 
-      // Update booking status
+      // Update booking payment status (booking is already confirmed by admin)
       await prisma.booking.update({
         where: { id: payment.bookingId },
         data: {
-          status: 'confirmed',
-          paymentStatus: 'paid',
+          paymentStatus,
           paidAt: new Date(),
-          confirmedAt: new Date(),
         },
       })
 

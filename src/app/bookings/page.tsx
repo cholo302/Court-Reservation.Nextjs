@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -14,6 +14,9 @@ interface Booking {
   endTime: string
   playerCount: number
   totalAmount: number
+  downpaymentAmount: number
+  balanceAmount: number
+  paymentType: string | null
   court: {
     id: number
     name: string
@@ -35,7 +38,19 @@ const statusConfig: Record<string, { bg: string; text: string; icon: string }> =
   expired: { bg: 'bg-gray-100', text: 'text-gray-800', icon: 'fa-hourglass-end' },
 }
 
-export default function BookingsPage() {
+export default function BookingsPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-20">
+        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+      </div>
+    }>
+      <BookingsPage />
+    </Suspense>
+  )
+}
+
+function BookingsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const currentStatus = searchParams.get('status') || ''
@@ -205,6 +220,11 @@ export default function BookingsPage() {
                             <i className={`fas ${config.icon} mr-1`}></i>
                             {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                           </span>
+                          {booking.payment?.status === 'downpayment' && (
+                            <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-medium">
+                              <i className="fas fa-hand-holding-usd mr-1"></i>Downpayment
+                            </span>
+                          )}
                           {booking.payment?.status === 'paid' && (
                             <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
                               <i className="fas fa-check-circle mr-1"></i>Paid
@@ -236,10 +256,31 @@ export default function BookingsPage() {
                       </div>
 
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-ph-blue">
-                          {formatPrice(booking.totalAmount)}
-                        </p>
-                        <p className="text-xs text-gray-500">Total Amount</p>
+                        {booking.paymentType === 'venue' && (booking.payment?.status === 'downpayment' || booking.payment?.status === 'paid') && booking.balanceAmount > 0 ? (
+                          <>
+                            <div className="text-sm text-gray-600 mb-1">
+                              <span className="font-medium text-green-600">₱{(booking.downpaymentAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                              <span className="text-gray-500"> paid</span>
+                            </div>
+                            {booking.payment?.status === 'downpayment' ? (
+                              <div className="text-sm text-orange-600 font-medium">
+                                ₱{(booking.balanceAmount).toLocaleString('en-PH', { minimumFractionDigits: 2 })} balance due
+                              </div>
+                            ) : (
+                              <div className="text-sm text-green-600 font-medium">
+                                <i className="fas fa-check-circle mr-1"></i>Fully Paid
+                              </div>
+                            )}
+                            <p className="text-xs text-gray-500 mt-1">Total: {formatPrice(booking.totalAmount)}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-2xl font-bold text-ph-blue">
+                              {formatPrice(booking.totalAmount)}
+                            </p>
+                            <p className="text-xs text-gray-500">Total Amount</p>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -278,14 +319,7 @@ export default function BookingsPage() {
                         </Link>
                       )}
 
-                      {booking.status === 'completed' && !booking.hasReview && (
-                        <Link
-                          href={`/bookings/${booking.id}/review`}
-                          className="inline-flex items-center px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium hover:bg-yellow-200 transition"
-                        >
-                          <i className="fas fa-star mr-2"></i>Leave Review
-                        </Link>
-                      )}
+
                     </div>
                   </div>
                 </div>

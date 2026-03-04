@@ -58,13 +58,17 @@ export async function GET(
       }
     }
 
-    // Get existing bookings for this date - only confirmed/paid/completed should block slots
+    // Get existing bookings for this date - only PAID bookings block slots
+    // Unpaid bookings (even if confirmed) should NOT block slots so others can book
     const existingBookings = await prisma.booking.findMany({
       where: {
         courtId,
         bookingDate: new Date(date),
         status: {
           in: ['confirmed', 'paid', 'completed'],
+        },
+        paymentStatus: {
+          in: ['paid', 'partial', 'downpayment'],  // Only block if payment was made
         },
       },
       select: {

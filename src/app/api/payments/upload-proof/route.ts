@@ -50,6 +50,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This booking is already paid' }, { status: 400 })
     }
 
+    // Booking must be confirmed before payment
+    if (booking.status !== 'confirmed') {
+      return NextResponse.json({ error: 'Booking must be confirmed before payment can be submitted' }, { status: 400 })
+    }
+
     // Save the proof image
     const bytes = await proof.arrayBuffer()
     const buffer = Buffer.from(bytes)
@@ -72,6 +77,9 @@ export async function POST(request: NextRequest) {
     const paymentRef = generatePaymentReference()
     const paymentAmount = amount ? parseFloat(amount) : Number(booking.totalAmount)
 
+    // Determine payment type based on booking's payment type
+    const isDownpayment = booking.paymentType === 'venue'
+
     const payment = await prisma.payment.create({
       data: {
         paymentReference: paymentRef,
@@ -79,18 +87,17 @@ export async function POST(request: NextRequest) {
         userId: parseInt(session.user.id),
         amount: paymentAmount,
         paymentMethod: 'gcash',
-        paymentType: 'full',
+        paymentType: isDownpayment ? 'downpayment' : 'full',
         status: 'processing',
         proofScreenshot: proofUrl,
         transactionId: referenceNumber,
       },
     })
 
-    // Update booking status to show payment is being processed
+    // Update booking paymentStatus to show payment is being processed (keep status as confirmed)
     await prisma.booking.update({
       where: { id: parseInt(bookingId) },
       data: {
-        status: 'pending',
         paymentStatus: 'partial',
       },
     })

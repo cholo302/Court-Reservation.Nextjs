@@ -2,17 +2,11 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
 
 interface Stats {
-  today: {
-    totalBookings: number
-    completed: number
-  }
-  month: {
-    totalRevenue: number
-    totalBookings: number
-  }
+  today: { totalBookings: number; completed: number; revenue: number }
+  week: { totalBookings: number; revenue: number }
+  month: { totalBookings: number; revenue: number }
 }
 
 interface Booking {
@@ -29,341 +23,540 @@ interface Booking {
 
 interface Payment {
   id: number
-  referenceNumber: string
+  paymentReference: string
   amount: number
   status: string
   createdAt: string
-  booking: {
-    bookingCode: string
-  }
-  user: {
-    name: string
-  }
+  bookingCode: string
+  courtName: string
+  userName: string
+}
+
+interface RevenueMonth {
+  month: string
+  revenue: number
+}
+
+interface TopCourt {
+  name: string
+  bookings: number
+  revenue: number
+}
+
+interface StatusCount {
+  status: string
+  count: number
+}
+
+const statusColors: Record<string, { bg: string; text: string; bar: string }> = {
+  confirmed: { bg: 'bg-blue-50', text: 'text-blue-700', bar: 'bg-blue-500' },
+  paid: { bg: 'bg-emerald-50', text: 'text-emerald-700', bar: 'bg-emerald-500' },
+  completed: { bg: 'bg-green-50', text: 'text-green-700', bar: 'bg-green-500' },
+  cancelled: { bg: 'bg-red-50', text: 'text-red-700', bar: 'bg-red-400' },
+  pending: { bg: 'bg-amber-50', text: 'text-amber-700', bar: 'bg-amber-400' },
 }
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<Stats | null>(null)
-  const [pendingBookings, setPendingBookings] = useState<Booking[]>([])
+  const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([])
   const [pendingPayments, setPendingPayments] = useState<Payment[]>([])
   const [totalUsers, setTotalUsers] = useState(0)
+  const [totalCourts, setTotalCourts] = useState(0)
+  const [revenueByMonth, setRevenueByMonth] = useState<RevenueMonth[]>([])
+  const [topCourts, setTopCourts] = useState<TopCourt[]>([])
+  const [bookingsByStatus, setBookingsByStatus] = useState<StatusCount[]>([])
+  const [totalBookings, setTotalBookings] = useState(0)
+  const [awaitingPaymentCount, setAwaitingPaymentCount] = useState(0)
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const response = await fetch('/api/admin/dashboard')
         const data = await response.json()
-
         setStats(data.stats)
-        setPendingBookings(data.pendingBookings || [])
+        setUpcomingBookings(data.upcomingBookings || [])
         setPendingPayments(data.pendingPayments || [])
         setTotalUsers(data.totalUsers || 0)
+        setTotalCourts(data.totalCourts || 0)
+        setRevenueByMonth(data.revenueByMonth || [])
+        setTopCourts(data.topCourts || [])
+        setBookingsByStatus(data.bookingsByStatus || [])
+        setTotalBookings(data.totalBookings || 0)
+        setAwaitingPaymentCount(data.awaitingPaymentCount || 0)
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
       } finally {
         setLoading(false)
       }
     }
-
     fetchDashboardData()
   }, [])
 
-  const handleBookingAction = async (bookingId: number, action: 'confirm' | 'cancel') => {
-    if (action === 'cancel' && !confirm('Cancel this booking?')) return
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(price)
 
-    try {
-      const response = await fetch(`/api/admin/bookings/${bookingId}?action=${action}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-
-      if (!response.ok) throw new Error('Failed to update booking')
-
-      toast.success(`Booking ${action === 'confirm' ? 'confirmed' : 'cancelled'}`)
-      setPendingBookings((prev) => prev.filter((b) => b.id !== bookingId))
-    } catch (error) {
-      toast.error('Failed to update booking')
-    }
+  const formatCompact = (price: number) => {
+    if (price >= 1000) return `₱${(price / 1000).toFixed(1)}k`
+    return `₱${price}`
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-PH', {
-      style: 'currency',
-      currency: 'PHP',
-    }).format(price)
-  }
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  }
+  const formatTime = (time: string) =>
+    new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
 
-  const formatTime = (time: string) => {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    })
+  const timeAgo = (date: string) => {
+    const diff = Date.now() - new Date(date).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return 'Just now'
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    return `${Math.floor(hrs / 24)}d ago`
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+      <div className="flex items-center justify-center py-20">
+        <i className="fas fa-spinner fa-spin text-3xl text-ph-blue"></i>
       </div>
     )
   }
 
+  const maxRevenue = Math.max(...revenueByMonth.map((r) => r.revenue), 1)
+  const totalStatusCount = bookingsByStatus.reduce((sum, s) => sum + s.count, 0)
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600">Manage bookings, payments, and users</p>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-gray-500 text-sm mt-1">Overview of your court reservation system</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/scanner"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-ph-blue text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition shadow-sm"
+          >
+            <i className="fas fa-qrcode"></i>
+            Scan QR
+          </Link>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Today&apos;s Bookings</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {stats?.today.totalBookings || 0}
-              </p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-[40px] -mr-2 -mt-2 opacity-50"></div>
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i className="fas fa-calendar-day text-ph-blue text-xs"></i>
+              </div>
+              <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-wider">Today</span>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <i className="fas fa-calendar-day text-ph-blue text-xl"></i>
+            <p className="text-3xl font-extrabold text-gray-900">{stats?.today.totalBookings || 0}</p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-xs text-gray-400">{stats?.today.completed || 0} completed</span>
+              {(stats?.today.revenue || 0) > 0 && (
+                <>
+                  <span className="text-xs text-gray-300">&middot;</span>
+                  <span className="text-xs font-medium text-green-600">{formatPrice(stats?.today.revenue || 0)}</span>
+                </>
+              )}
             </div>
           </div>
-          <p className="text-sm text-green-600 mt-2">
-            <i className="fas fa-check-circle mr-1"></i>
-            {stats?.today.completed || 0} completed
-          </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Monthly Revenue</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {formatPrice(stats?.month.totalRevenue || 0)}
-              </p>
+        <div className="bg-white rounded-xl border border-gray-100 p-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-green-50 rounded-bl-[40px] -mr-2 -mt-2 opacity-50"></div>
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <i className="fas fa-peso-sign text-green-600 text-xs"></i>
+              </div>
+              <span className="text-[11px] font-semibold text-green-600 uppercase tracking-wider">Revenue</span>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <i className="fas fa-peso-sign text-green-600 text-xl"></i>
+            <p className="text-3xl font-extrabold text-gray-900">{formatPrice(stats?.month.revenue || 0)}</p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-xs text-gray-400">{stats?.month.totalBookings || 0} bookings this month</span>
             </div>
           </div>
-          <p className="text-sm text-gray-500 mt-2">
-            <i className="fas fa-chart-line mr-1"></i>
-            {stats?.month.totalBookings || 0} bookings this month
-          </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Pending Approvals</p>
-              <p className="text-3xl font-bold text-gray-900">{pendingBookings.length}</p>
+        <div className="bg-white rounded-xl border border-gray-100 p-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-orange-50 rounded-bl-[40px] -mr-2 -mt-2 opacity-50"></div>
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                <i className="fas fa-receipt text-orange-600 text-xs"></i>
+              </div>
+              <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-wider">Payments</span>
             </div>
-            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-              <i className="fas fa-clock text-yellow-600 text-xl"></i>
+            <p className="text-3xl font-extrabold text-gray-900">{pendingPayments.length + awaitingPaymentCount}</p>
+            <div className="flex items-center gap-2 mt-1.5">
+              {(pendingPayments.length + awaitingPaymentCount) > 0 ? (
+                <span className="text-xs font-medium text-orange-600">
+                  <i className="fas fa-circle text-[6px] animate-pulse mr-1 align-middle"></i>
+                  {pendingPayments.length > 0 ? `${pendingPayments.length} to verify` : ''}
+                  {pendingPayments.length > 0 && awaitingPaymentCount > 0 ? ' · ' : ''}
+                  {awaitingPaymentCount > 0 ? `${awaitingPaymentCount} awaiting payment` : ''}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-400">All caught up</span>
+              )}
             </div>
           </div>
-          <p className="text-sm text-yellow-600 mt-2">
-            <i className="fas fa-exclamation-circle mr-1"></i>
-            {pendingPayments.length} payments to verify
-          </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Users</p>
-              <p className="text-3xl font-bold text-gray-900">{totalUsers}</p>
+        <div className="bg-white rounded-xl border border-gray-100 p-5 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-purple-50 rounded-bl-[40px] -mr-2 -mt-2 opacity-50"></div>
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i className="fas fa-users text-purple-600 text-xs"></i>
+              </div>
+              <span className="text-[11px] font-semibold text-purple-600 uppercase tracking-wider">Users</span>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-              <i className="fas fa-users text-purple-600 text-xl"></i>
+            <p className="text-3xl font-extrabold text-gray-900">{totalUsers}</p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-xs text-gray-400">{totalCourts} active courts</span>
             </div>
           </div>
-          <p className="text-sm text-gray-500 mt-2">
-            <i className="fas fa-user-plus mr-1"></i>
-            Active members
-          </p>
         </div>
       </div>
 
-      {/* Pending Bookings Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
-        <div className="p-6 border-b flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">Pending Bookings</h2>
-          <Link
-            href="/admin/bookings?status=pending"
-            className="text-ph-blue text-sm hover:underline"
-          >
-            View All
-          </Link>
+      {/* Pending Payments Alert Banner */}
+      {pendingPayments.length > 0 && (
+        <Link href="/admin/payments" className="block mb-6 group">
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-4 flex items-center gap-4 hover:border-orange-300 transition">
+            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
+              <i className="fas fa-bell text-orange-600 text-sm"></i>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-orange-900">
+                {pendingPayments.length} payment{pendingPayments.length > 1 ? 's' : ''} awaiting verification
+              </p>
+              <p className="text-xs text-orange-600/70 mt-0.5 truncate">
+                {pendingPayments.slice(0, 3).map((p) => p.bookingCode).join(', ')}
+                {pendingPayments.length > 3 && ` +${pendingPayments.length - 3} more`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-sm font-bold text-orange-700">
+                {formatPrice(pendingPayments.reduce((sum, p) => sum + p.amount, 0))}
+              </span>
+              <i className="fas fa-arrow-right text-orange-400 text-xs group-hover:translate-x-1 transition-transform"></i>
+            </div>
+          </div>
+        </Link>
+      )}
+
+      <div className="grid lg:grid-cols-3 gap-6 mb-6">
+        {/* Revenue Chart */}
+        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="font-bold text-gray-900 text-sm">Revenue Overview</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Last 6 months</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-extrabold text-gray-900">{formatPrice(stats?.month.revenue || 0)}</p>
+              <p className="text-[11px] text-gray-400">This month</p>
+            </div>
+          </div>
+          <div className="flex items-end gap-3 h-40">
+            {revenueByMonth.map((item, i) => {
+              const height = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0
+              const isLast = i === revenueByMonth.length - 1
+              return (
+                <div key={item.month} className="flex-1 flex flex-col items-center gap-2">
+                  <span className="text-[10px] font-semibold text-gray-500">{formatCompact(item.revenue)}</span>
+                  <div className="w-full relative" style={{ height: '100px' }}>
+                    <div
+                      className={`absolute bottom-0 w-full rounded-t-md transition-all ${
+                        isLast ? 'bg-ph-blue' : 'bg-gray-200'
+                      }`}
+                      style={{ height: `${Math.max(height, 4)}%` }}
+                    ></div>
+                  </div>
+                  <span className={`text-[11px] font-medium ${isLast ? 'text-ph-blue' : 'text-gray-400'}`}>
+                    {item.month}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         </div>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Booking
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Court
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Schedule
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Customer
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {pendingBookings.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                  <i className="fas fa-check-circle text-4xl mb-2"></i>
-                  <p>No pending bookings</p>
-                </td>
-              </tr>
-            ) : (
-              pendingBookings.slice(0, 5).map((booking) => (
-                <tr key={booking.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <p className="font-medium">{booking.bookingCode}</p>
-                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
-                      {booking.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm">{booking.courtName}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm">{formatDate(booking.bookingDate)}</p>
-                    <p className="text-sm text-gray-500">
-                      {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm">{booking.userName}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-ph-blue">
-                      {formatPrice(booking.totalAmount)}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      <button
-                        onClick={() => handleBookingAction(booking.id, 'confirm')}
-                        className="text-green-600 hover:underline text-xs"
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        onClick={() => handleBookingAction(booking.id, 'cancel')}
-                        className="text-red-600 hover:underline text-xs"
-                      >
-                        Cancel
-                      </button>
+
+        {/* Booking Status Breakdown */}
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="font-bold text-gray-900 text-sm">Booking Status</h2>
+              <p className="text-xs text-gray-400 mt-0.5">This month&apos;s breakdown</p>
+            </div>
+            <span className="text-lg font-extrabold text-gray-900">{totalBookings}</span>
+          </div>
+
+          {/* Stacked bar */}
+          {totalStatusCount > 0 && (
+            <div className="flex rounded-full overflow-hidden h-3 mb-5 bg-gray-100">
+              {bookingsByStatus.map((s) => {
+                const pct = (s.count / totalStatusCount) * 100
+                const color = statusColors[s.status]?.bar || 'bg-gray-300'
+                return (
+                  <div
+                    key={s.status}
+                    className={`${color} transition-all`}
+                    style={{ width: `${pct}%` }}
+                    title={`${s.status}: ${s.count}`}
+                  ></div>
+                )
+              })}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {bookingsByStatus.map((s) => {
+              const color = statusColors[s.status] || statusColors.pending
+              const pct = totalStatusCount > 0 ? ((s.count / totalStatusCount) * 100).toFixed(0) : 0
+              return (
+                <div key={s.status} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-2.5 h-2.5 rounded-full ${color.bar}`}></div>
+                    <span className="text-sm text-gray-700 capitalize">{s.status}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-400">{pct}%</span>
+                    <span className="text-sm font-bold text-gray-900 w-8 text-right">{s.count}</span>
+                  </div>
+                </div>
+              )
+            })}
+            {bookingsByStatus.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-4">No booking data yet</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        {/* Today's Schedule */}
+        <div className="bg-white rounded-xl border border-gray-100">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-gray-900 text-sm">Today&apos;s Schedule</h2>
+              {upcomingBookings.filter((b) => {
+                const d = new Date(b.bookingDate)
+                const now = new Date()
+                return d.toDateString() === now.toDateString()
+              }).length > 0 && (
+                <span className="text-[10px] font-bold text-white bg-ph-blue rounded-full w-5 h-5 flex items-center justify-center">
+                  {upcomingBookings.filter((b) => {
+                    const d = new Date(b.bookingDate)
+                    const now = new Date()
+                    return d.toDateString() === now.toDateString()
+                  }).length}
+                </span>
+              )}
+            </div>
+            <Link href="/admin/bookings" className="text-xs text-ph-blue hover:underline font-medium">
+              All bookings
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {(() => {
+              const todayBookings = upcomingBookings.filter((b) => {
+                const d = new Date(b.bookingDate)
+                const now = new Date()
+                return d.toDateString() === now.toDateString()
+              })
+              if (todayBookings.length === 0) {
+                return (
+                  <div className="px-5 py-10 text-center">
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <i className="fas fa-calendar-xmark text-gray-300 text-lg"></i>
                     </div>
-                  </td>
-                </tr>
+                    <p className="text-sm font-medium text-gray-400">No bookings today</p>
+                    <p className="text-xs text-gray-300 mt-1">Enjoy the quiet!</p>
+                  </div>
+                )
+              }
+              return todayBookings.map((b) => (
+                <div key={b.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-gray-50/50 transition">
+                  <div className="w-12 text-center shrink-0">
+                    <p className="text-xs font-bold text-ph-blue leading-tight">{formatTime(b.startTime)}</p>
+                    <p className="text-[10px] text-gray-300 my-0.5">to</p>
+                    <p className="text-[10px] font-medium text-gray-400">{formatTime(b.endTime)}</p>
+                  </div>
+                  <div className="w-px h-10 bg-gray-100 shrink-0"></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{b.courtName}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {b.userName} &middot; {b.bookingCode}
+                    </p>
+                  </div>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                    b.status === 'paid' || b.status === 'completed'
+                      ? 'bg-green-50 text-green-700'
+                      : 'bg-blue-50 text-blue-700'
+                  }`}>
+                    {b.status === 'paid' ? 'Paid' : b.status === 'completed' ? 'Done' : 'Confirmed'}
+                  </span>
+                </div>
               ))
-            )}
-          </tbody>
-        </table>
+            })()}
+          </div>
+        </div>
+
+        {/* Upcoming (Future dates) */}
+        <div className="bg-white rounded-xl border border-gray-100">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-gray-900 text-sm">Coming Up</h2>
+              {upcomingBookings.filter((b) => {
+                const d = new Date(b.bookingDate)
+                const now = new Date()
+                return d.toDateString() !== now.toDateString()
+              }).length > 0 && (
+                <span className="text-[10px] font-bold text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">
+                  Next {upcomingBookings.filter((b) => new Date(b.bookingDate).toDateString() !== new Date().toDateString()).length}
+                </span>
+              )}
+            </div>
+            <Link href="/admin/bookings?status=confirmed" className="text-xs text-ph-blue hover:underline font-medium">
+              View all
+            </Link>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {(() => {
+              const futureBookings = upcomingBookings.filter((b) => {
+                const d = new Date(b.bookingDate)
+                const now = new Date()
+                return d.toDateString() !== now.toDateString()
+              })
+              if (futureBookings.length === 0) {
+                return (
+                  <div className="px-5 py-10 text-center">
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <i className="fas fa-calendar text-gray-300 text-lg"></i>
+                    </div>
+                    <p className="text-sm font-medium text-gray-400">No upcoming bookings</p>
+                  </div>
+                )
+              }
+              return futureBookings.slice(0, 5).map((b) => (
+                <div key={b.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-gray-50/50 transition">
+                  <div className="w-14 text-center shrink-0 bg-gray-50 rounded-lg py-1.5">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase">
+                      {new Date(b.bookingDate).toLocaleDateString('en-US', { weekday: 'short' })}
+                    </p>
+                    <p className="text-sm font-extrabold text-gray-900 -mt-0.5">
+                      {new Date(b.bookingDate).getDate()}
+                    </p>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{b.courtName}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {b.userName} &middot; {formatTime(b.startTime)}-{formatTime(b.endTime)}
+                    </p>
+                  </div>
+                  <p className="text-sm font-bold text-gray-900 shrink-0">{formatPrice(b.totalAmount)}</p>
+                </div>
+              ))
+            })()}
+          </div>
+        </div>
       </div>
 
-      {/* Pending Payments Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="p-6 border-b flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">Pending Payments</h2>
-          <Link
-            href="/admin/payments?status=pending"
-            className="text-ph-blue text-sm hover:underline"
-          >
-            View All
-          </Link>
+      {/* Top Courts */}
+      {topCourts.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="font-bold text-gray-900 text-sm">Top Courts</h2>
+              <p className="text-xs text-gray-400 mt-0.5">By revenue this month</p>
+            </div>
+            <Link href="/admin/courts" className="text-xs text-ph-blue hover:underline font-medium">
+              Manage courts
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {topCourts.map((court, i) => {
+              const maxCourtRev = Math.max(...topCourts.map((c) => c.revenue), 1)
+              const pct = (court.revenue / maxCourtRev) * 100
+              return (
+                <div key={court.name} className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100/80 transition">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-extrabold ${
+                      i === 0 ? 'bg-yellow-100 text-yellow-700' : i === 1 ? 'bg-gray-200 text-gray-600' : 'bg-orange-50 text-orange-600'
+                    }`}>
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{court.name}</p>
+                      <p className="text-[11px] text-gray-400">{court.bookings} bookings</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-ph-blue h-full rounded-full transition-all" style={{ width: `${pct}%` }}></div>
+                    </div>
+                    <span className="text-xs font-bold text-gray-700 shrink-0">{formatPrice(court.revenue)}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Reference
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Booking
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Customer
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {pendingPayments.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                  <i className="fas fa-check-circle text-4xl mb-2"></i>
-                  <p>No pending payments</p>
-                </td>
-              </tr>
-            ) : (
-              pendingPayments.slice(0, 5).map((payment) => (
-                <tr key={payment.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-sm">{payment.referenceNumber}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm">{payment.booking.bookingCode}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm">{payment.user.name}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-ph-blue">
-                      {formatPrice(payment.amount)}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
-                      {payment.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/admin/payments/${payment.referenceNumber}`}
-                      className="text-ph-blue hover:underline text-xs"
-                    >
-                      Review
-                    </Link>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      )}
+
+      {/* Quick Actions */}
+      <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Link
+          href="/admin/scanner"
+          className="bg-white border border-gray-100 rounded-xl p-4 hover:border-ph-blue/30 hover:bg-blue-50/30 transition group text-center"
+        >
+          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-2.5 group-hover:bg-blue-100 transition">
+            <i className="fas fa-qrcode text-ph-blue text-sm"></i>
+          </div>
+          <p className="text-sm font-semibold text-gray-900">Scan QR</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">Check-in customers</p>
+        </Link>
+        <Link
+          href="/admin/bookings"
+          className="bg-white border border-gray-100 rounded-xl p-4 hover:border-emerald-200 hover:bg-emerald-50/30 transition group text-center"
+        >
+          <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center mx-auto mb-2.5 group-hover:bg-emerald-100 transition">
+            <i className="fas fa-calendar-alt text-emerald-600 text-sm"></i>
+          </div>
+          <p className="text-sm font-semibold text-gray-900">Bookings</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">Manage reservations</p>
+        </Link>
+        <Link
+          href="/admin/payments"
+          className="bg-white border border-gray-100 rounded-xl p-4 hover:border-orange-200 hover:bg-orange-50/30 transition group text-center"
+        >
+          <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center mx-auto mb-2.5 group-hover:bg-orange-100 transition">
+            <i className="fas fa-credit-card text-orange-600 text-sm"></i>
+          </div>
+          <p className="text-sm font-semibold text-gray-900">Payments</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">Verify & manage</p>
+        </Link>
+        <Link
+          href="/admin/reports"
+          className="bg-white border border-gray-100 rounded-xl p-4 hover:border-purple-200 hover:bg-purple-50/30 transition group text-center"
+        >
+          <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center mx-auto mb-2.5 group-hover:bg-purple-100 transition">
+            <i className="fas fa-chart-pie text-purple-600 text-sm"></i>
+          </div>
+          <p className="text-sm font-semibold text-gray-900">Reports</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">Analytics & data</p>
+        </Link>
       </div>
     </div>
   )
