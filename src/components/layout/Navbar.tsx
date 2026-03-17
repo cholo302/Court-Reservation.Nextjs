@@ -170,8 +170,8 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex items-center group">
-              <div className="w-10 h-10 rounded-full overflow-hidden mr-2.5 flex-shrink-0 group-hover:scale-105 transition-transform shadow-md bg-ph-yellow p-[2px]">
-                <img src="/olopsc.jpg" alt="OLOPSC" className="w-full h-full object-cover rounded-full" />
+              <div className="w-10 h-10 rounded-full overflow-hidden mr-2.5 flex-shrink-0 group-hover:scale-105 transition-transform shadow-md">
+                <img src="/olopsc-logo.png" alt="OLOPSC" className="w-full h-full object-cover" />
               </div>
               <span className="text-lg font-bold bg-gradient-to-r from-ph-blue to-blue-600 bg-clip-text text-transparent">
                 OLOPSC Court Reservation

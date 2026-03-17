@@ -47,8 +47,8 @@ export default function AdminSidebar() {
       <div className={`flex items-center h-16 border-b border-gray-100 ${collapsed ? 'justify-center px-2' : 'px-5'}`}>
         {!collapsed && (
           <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-ph-yellow p-[2px]">
-              <img src="/olopsc.jpg" alt="OLOPSC" className="w-full h-full object-cover rounded-full" />
+            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+              <img src="/olopsc-logo.png" alt="OLOPSC" className="w-full h-full object-cover" />
             </div>
             <span className="font-extrabold text-gray-900 tracking-tight">OLOPSC Court Reservation</span>
           </Link>

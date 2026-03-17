@@ -33,8 +33,8 @@ export default function Footer() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
         {/* Logo + name */}
         <div className="flex items-center justify-center gap-3 mb-3">
-          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 shadow-md bg-ph-yellow p-[3px]">
-            <img src="/olopsc.jpg" alt="Logo" className="w-full h-full object-cover rounded-full" />
+          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 shadow-md">
+            <img src="/olopsc-logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <span className="text-2xl font-extrabold tracking-tight">{info.siteName}</span>
         </div>

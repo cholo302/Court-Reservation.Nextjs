@@ -136,8 +136,8 @@ export default function AdminReportsPage() {
           {/* Receipt Header */}
           <div className="bg-gradient-to-r from-[#1d3178] to-[#111d4e] text-white px-8 py-6 text-center">
             <div className="flex items-center justify-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-ph-yellow p-[2px]">
-                <img src="/olopsc.jpg" alt="OLOPSC" className="w-full h-full object-cover rounded-full" />
+              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                <img src="/olopsc-logo.png" alt="OLOPSC" className="w-full h-full object-cover" />
               </div>
               <span className="text-xs tracking-[0.25em] uppercase font-medium text-ph-yellow">OLOPSC Court Reservation</span>
             </div>
