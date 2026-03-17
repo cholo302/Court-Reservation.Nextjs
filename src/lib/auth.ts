@@ -36,15 +36,26 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!user.isActive) {
-          throw new Error('Your account is not active. Please wait for admin verification.')
+          throw new Error('Your account has been deactivated. Please contact admin.')
         }
+
+        // Derive verification status
+        const verificationStatus = user.isIdVerified
+          ? 'verified' as const
+          : user.isIdInvalid
+          ? 'rejected' as const
+          : user.govIdPhoto
+          ? 'pending' as const
+          : 'none' as const
 
         return {
           id: user.id.toString(),
           email: user.email,
           name: user.name,
           role: user.role,
-          image: user.profileImage,
+          image: user.profileImage || user.facePhoto,
+          isIdVerified: user.isIdVerified,
+          verificationStatus,
         }
       },
     }),
@@ -62,13 +73,50 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = user.role
+        token.picture = user.image
+        token.isIdVerified = (user as any).isIdVerified ?? false
+        token.verificationStatus = (user as any).verificationStatus ?? 'none'
       }
+      
+      // Check if user is still active and refresh verification status
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: parseInt(token.id as string) },
+          select: { isActive: true, isBlacklisted: true, isIdVerified: true, isIdInvalid: true, govIdPhoto: true, profileImage: true, facePhoto: true },
+        })
+
+        // If user is deleted, deactivated, or blacklisted, mark token as invalid
+        if (!dbUser || !dbUser.isActive || dbUser.isBlacklisted) {
+          token.invalid = true
+        }
+        // Keep verification status and profile image up to date
+        if (dbUser) {
+          token.isIdVerified = dbUser.isIdVerified
+          token.verificationStatus = dbUser.isIdVerified
+            ? 'verified'
+            : dbUser.isIdInvalid
+            ? 'rejected'
+            : dbUser.govIdPhoto
+            ? 'pending'
+            : 'none'
+          token.picture = dbUser.profileImage || dbUser.facePhoto || token.picture
+        }
+      }
+      
       return token
     },
     async session({ session, token }) {
+      // Check if token is marked as invalid
+      if (token.invalid) {
+        return null as any // This will force re-authentication
+      }
+      
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as string
+        session.user.image = (token.picture as string) || null
+        session.user.isIdVerified = (token.isIdVerified as boolean) ?? false
+        session.user.verificationStatus = (token.verificationStatus as any) ?? 'none'
       }
       return session
     },
@@ -90,6 +138,7 @@ export const authOptions: NextAuthOptions = {
               providerId: account.providerAccountId,
               profileImage: user.image,
               isActive: true,
+              isIdVerified: false,
             },
           })
         }

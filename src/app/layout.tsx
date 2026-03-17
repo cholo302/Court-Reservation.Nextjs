@@ -11,8 +11,8 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'CourtReserve - Marikina Sports Center',
-  description: 'Book sports courts at Marikina Sports Center - Basketball, Badminton, Volleyball, Ping Pong and more',
+  title: 'OLOPSC Court Reservation',
+  description: 'Book sports courts at Our Lady of Perpetual Succor College - Basketball, Badminton, Volleyball, Ping Pong and more',
 }
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
         <link
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"

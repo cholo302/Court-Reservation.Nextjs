@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { Footer } from '@/components/layout'
 
 interface Court {
   id: number
@@ -11,7 +13,6 @@ interface Court {
   city: string
   thumbnail: string | null
   hourlyRate: number
-  peakHourRate: number | null
   rating: number
   capacity: number | null
   amenities: string[]
@@ -30,6 +31,8 @@ const amenityIcons: Record<string, string> = {
 
 function CourtsContent() {
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'admin'
   const query = searchParams.get('q') || ''
 
   const [courts, setCourts] = useState<Court[]>([])
@@ -39,10 +42,7 @@ function CourtsContent() {
   const fetchCourts = async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams()
-      if (searchQuery) params.set('q', searchQuery)
-
-      const response = await fetch(`/api/courts?${params.toString()}`)
+      const response = await fetch('/api/courts')
       const data = await response.json()
       setCourts(data.courts || [])
     } catch (error) {
@@ -56,10 +56,13 @@ function CourtsContent() {
     fetchCourts()
   }, [])
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    fetchCourts()
-  }
+  const filteredCourts = courts.filter(
+    (court) =>
+      court.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      court.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      court.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      court.courtType.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-PH', {
@@ -70,42 +73,41 @@ function CourtsContent() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Back Button */}
+      <Link
+        href="/"
+        className="inline-flex items-center gap-2 text-ph-blue hover:text-blue-700 font-medium mb-8 transition-colors"
+      >
+        <i className="fas fa-arrow-left"></i>
+        Back to Dashboard
+      </Link>
+
       {/* Header + Search */}
       <div className="mb-10">
         <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2 tracking-tight">Browse Courts</h1>
         <p className="text-gray-500 mb-6">Find and book available sports courts</p>
-        <form onSubmit={handleSearch}>
-          <div className="flex gap-3">
-            <div className="flex-1 relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <i className="fas fa-search text-gray-400"></i>
-              </div>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name, location, sport type..."
-                className="block w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-ph-blue focus:border-transparent shadow-sm text-sm"
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-ph-blue text-white px-7 py-3.5 rounded-xl font-medium hover:bg-blue-700 transition-colors shadow-sm active:scale-[0.98]"
-            >
-              Search
-            </button>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i className="fas fa-search text-gray-400"></i>
           </div>
-        </form>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search courts by name, location, or type..."
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ph-blue focus:border-transparent outline-none transition"
+          />
+        </div>
       </div>
 
       {/* Results count */}
-      {!loading && courts.length > 0 && (
+      {!loading && (
         <div className="flex items-center gap-2 mb-6">
           <span className="bg-ph-blue/10 text-ph-blue text-sm font-semibold px-3 py-1 rounded-full">
-            {courts.length} court{courts.length !== 1 ? 's' : ''}
+            {filteredCourts.length} court{filteredCourts.length !== 1 ? 's' : ''}
           </span>
-          {query && (
-            <span className="text-gray-500 text-sm">for &ldquo;{query}&rdquo;</span>
+          {searchQuery && (
+            <span className="text-gray-500 text-sm">for &ldquo;{searchQuery}&rdquo;</span>
           )}
         </div>
       )}
@@ -115,20 +117,22 @@ function CourtsContent() {
           <i className="fas fa-spinner fa-spin text-4xl text-ph-blue mb-4"></i>
           <p className="text-gray-400 text-sm">Loading courts...</p>
         </div>
-      ) : courts.length === 0 ? (
+      ) : filteredCourts.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
             <i className="fas fa-search text-gray-300 text-3xl"></i>
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">No courts found</h2>
-          <p className="text-gray-500 mb-6">Try adjusting your search or filters</p>
-          <Link href="/courts" className="text-ph-blue font-semibold hover:underline text-sm">
-            Clear all filters
-          </Link>
+          <p className="text-gray-500 mb-6">Try adjusting your search</p>
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="text-ph-blue font-semibold hover:underline text-sm">
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courts.map((court) => (
+          {filteredCourts.map((court) => (
             <Link
               key={court.id}
               href={`/courts/${court.id}`}
@@ -151,12 +155,6 @@ function CourtsContent() {
                 <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-ph-blue text-xs font-bold px-2.5 py-1 rounded-lg">
                   {court.courtType?.name || 'Court'}
                 </span>
-
-                {court.peakHourRate && (
-                  <span className="absolute top-3 right-3 bg-ph-yellow/90 backdrop-blur-sm text-ph-blue text-xs font-bold px-2.5 py-1 rounded-lg">
-                    Peak Hours
-                  </span>
-                )}
               </div>
 
               <div className="p-5">
@@ -178,22 +176,7 @@ function CourtsContent() {
                   </p>
                 )}
 
-                {/* Amenities */}
-                {court.amenities && court.amenities.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {court.amenities.slice(0, 4).map((amenity) => (
-                      <span
-                        key={amenity}
-                        className="bg-gray-50 text-gray-500 text-xs px-2 py-1 rounded-md border border-gray-100"
-                      >
-                        <i
-                          className={`fas ${amenityIcons[amenity] || 'fa-check'} mr-1`}
-                        ></i>
-                        {amenity.charAt(0).toUpperCase() + amenity.slice(1)}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {/* Amenities removed */}
 
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                   <div>
@@ -217,12 +200,15 @@ function CourtsContent() {
 
 export default function CourtsPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center py-20">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
-      </div>
-    }>
-      <CourtsContent />
-    </Suspense>
+    <>
+      <Suspense fallback={
+        <div className="flex items-center justify-center py-20">
+          <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        </div>
+      }>
+        <CourtsContent />
+      </Suspense>
+      <Footer />
+    </>
   )
 }

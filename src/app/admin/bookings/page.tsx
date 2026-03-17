@@ -17,14 +17,15 @@ interface Booking {
   courtName: string
   userName: string
   userEmail: string
+  userAvatar: string | null
 }
 
-const statusConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
-  pending: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400', label: 'Pending' },
-  confirmed: { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-400', label: 'Confirmed' },
-  paid: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-400', label: 'Paid' },
-  completed: { bg: 'bg-green-50', text: 'text-green-700', dot: 'bg-green-400', label: 'Completed' },
-  cancelled: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-400', label: 'Cancelled' },
+const statusConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
+  pending: { bg: 'bg-amber-100', text: 'text-amber-800', icon: 'fa-clock', label: 'Pending' },
+  confirmed: { bg: 'bg-blue-100', text: 'text-blue-800', icon: 'fa-circle-check', label: 'Confirmed' },
+  paid: { bg: 'bg-emerald-100', text: 'text-emerald-800', icon: 'fa-money-bill', label: 'Paid' },
+  completed: { bg: 'bg-green-100', text: 'text-green-800', icon: 'fa-flag-checkered', label: 'Completed' },
+  cancelled: { bg: 'bg-red-100', text: 'text-red-800', icon: 'fa-times-circle', label: 'Cancelled' },
 }
 
 function BookingsContent() {
@@ -33,23 +34,34 @@ function BookingsContent() {
 
   const [loading, setLoading] = useState(true)
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const fetchBookings = async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (currentStatus) params.set('status', currentStatus)
+      const response = await fetch(`/api/admin/bookings?${params.toString()}`)
+      const data = await response.json()
+      setBookings(data.items || [])
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const params = new URLSearchParams()
-        if (currentStatus) params.set('status', currentStatus)
-        const response = await fetch(`/api/admin/bookings?${params.toString()}`)
-        const data = await response.json()
-        setBookings(data.items || [])
-      } catch (error) {
-        console.error('Error fetching bookings:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchBookings()
   }, [currentStatus])
+
+  const filteredBookings = bookings.filter(
+    (b) =>
+      b.bookingCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.courtName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.userEmail.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   const handleAction = async (bookingId: number, action: string) => {
     if (action === 'cancel' && !confirm('Cancel this booking?')) return
@@ -123,6 +135,29 @@ function BookingsContent() {
         })}
       </div>
 
+      {/* Search */}
+      <div className="flex gap-3 mb-6">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i className="fas fa-search text-gray-400"></i>
+          </div>
+          <input
+            type="text"
+            placeholder="Search by booking code, court, or customer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-ph-blue focus:border-transparent outline-none transition"
+          />
+        </div>
+        <button
+          onClick={() => fetchBookings()}
+          className="px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 hover:bg-blue-100 transition-colors font-medium text-sm"
+          title="Refresh"
+        >
+          <i className="fas fa-refresh"></i>
+        </button>
+      </div>
+
       {/* Bookings List */}
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
         {/* Table Header */}
@@ -140,9 +175,14 @@ function BookingsContent() {
             <i className="fas fa-calendar-xmark text-gray-200 text-4xl mb-3"></i>
             <p className="text-sm text-gray-400">No bookings found</p>
           </div>
+        ) : filteredBookings.length === 0 ? (
+          <div className="px-5 py-16 text-center">
+            <i className="fas fa-search text-gray-200 text-4xl mb-3"></i>
+            <p className="text-sm text-gray-400">No bookings match your search</p>
+          </div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {bookings.map((booking) => {
+            {filteredBookings.map((booking) => {
               const config = statusConfig[booking.status] || statusConfig.pending
               return (
                 <div
@@ -154,8 +194,19 @@ function BookingsContent() {
                     <p className="text-xs text-gray-400 truncate">{booking.courtName}</p>
                   </div>
                   <div className="col-span-2 min-w-0">
-                    <p className="text-sm text-gray-900 truncate">{booking.userName}</p>
-                    <p className="text-xs text-gray-400 truncate">{booking.userEmail}</p>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
+                        {booking.userAvatar ? (
+                          <img src={booking.userAvatar} alt={booking.userName} className="w-full h-full object-cover" />
+                        ) : (
+                          <i className="fas fa-user text-gray-400 text-xs"></i>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-900 truncate">{booking.userName}</p>
+                        <p className="text-xs text-gray-400 truncate">{booking.userEmail}</p>
+                      </div>
+                    </div>
                   </div>
                   <div className="col-span-2">
                     <p className="text-sm text-gray-900">{formatDate(booking.bookingDate)}</p>
@@ -167,23 +218,25 @@ function BookingsContent() {
                     <p className="text-sm font-bold text-gray-900">{formatPrice(booking.totalAmount)}</p>
                   </div>
                   <div className="col-span-2">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`}></span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${config.bg} ${config.text}`}>
+                      <i className={`fas ${config.icon} text-xs`}></i>
                       {config.label}
                     </span>
                   </div>
-                  <div className="col-span-2 flex items-center gap-1.5">
+                  <div className="col-span-2 flex flex-wrap items-center gap-1.5">
                     <Link
                       href={`/admin/bookings/${booking.id}`}
-                      className="px-2.5 py-1.5 bg-gray-50 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-100 transition"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 text-xs font-medium border border-gray-200 transition-colors"
                     >
+                      <i className="fas fa-eye"></i>
                       View
                     </Link>
                     {booking.status === 'confirmed' && !booking.paymentStatus?.includes('paid') && (
                       <button
                         onClick={() => handleAction(booking.id, 'cancel')}
-                        className="px-2.5 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium border border-red-200 transition-colors"
                       >
+                        <i className="fas fa-times-circle"></i>
                         Cancel
                       </button>
                     )}

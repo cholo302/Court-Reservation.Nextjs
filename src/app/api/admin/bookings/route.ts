@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           court: { include: { courtType: true } },
-          user: { select: { id: true, name: true, email: true, phone: true } },
+          user: { select: { id: true, name: true, email: true, phone: true, profileImage: true, facePhoto: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * perPage,
@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
         userName: b.user?.name,
         userEmail: b.user?.email,
         userPhone: b.user?.phone,
+        userAvatar: b.user?.profileImage || b.user?.facePhoto || null,
       })),
       total,
       page,

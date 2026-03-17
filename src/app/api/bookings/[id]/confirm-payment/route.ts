@@ -22,7 +22,10 @@ export async function POST(
       where: isNumericId 
         ? { id: parseInt(params.id) }
         : { bookingCode: params.id },
-      include: { payments: { orderBy: { createdAt: 'desc' }, take: 1 } },
+      include: {
+        court: true,
+        payments: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
     })
 
     if (!booking) {
@@ -53,6 +56,18 @@ export async function POST(
       where: { id: booking.id },
       data: {
         paymentStatus: 'paid',
+      },
+    })
+
+    // Notify user that balance payment was confirmed
+    await prisma.notification.create({
+      data: {
+        userId: booking.userId,
+        type: 'payment_confirmed',
+        title: 'Balance Payment Confirmed',
+        message: `Your balance payment for ${booking.court?.name} has been confirmed. You're all set!`,
+        data: JSON.stringify({ bookingId: booking.id }),
+        channel: 'web',
       },
     })
 

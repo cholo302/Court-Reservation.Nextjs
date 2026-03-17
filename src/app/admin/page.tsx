@@ -48,6 +48,17 @@ interface StatusCount {
   count: number
 }
 
+interface ActivityLog {
+  id: number
+  action: string
+  description: string | null
+  entityType: string | null
+  entityId: number | null
+  userName: string
+  userEmail: string | null
+  createdAt: string
+}
+
 const statusColors: Record<string, { bg: string; text: string; bar: string }> = {
   confirmed: { bg: 'bg-blue-50', text: 'text-blue-700', bar: 'bg-blue-500' },
   paid: { bg: 'bg-emerald-50', text: 'text-emerald-700', bar: 'bg-emerald-500' },
@@ -68,6 +79,7 @@ export default function AdminDashboard() {
   const [bookingsByStatus, setBookingsByStatus] = useState<StatusCount[]>([])
   const [totalBookings, setTotalBookings] = useState(0)
   const [awaitingPaymentCount, setAwaitingPaymentCount] = useState(0)
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([])
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -84,6 +96,7 @@ export default function AdminDashboard() {
         setBookingsByStatus(data.bookingsByStatus || [])
         setTotalBookings(data.totalBookings || 0)
         setAwaitingPaymentCount(data.awaitingPaymentCount || 0)
+        setActivityLogs(data.recentActivityLogs || [])
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
       } finally {
@@ -91,6 +104,24 @@ export default function AdminDashboard() {
       }
     }
     fetchDashboardData()
+  }, [])
+
+  // Poll activity logs every 10 seconds for live updates
+  useEffect(() => {
+    const fetchActivityLogs = async () => {
+      try {
+        const response = await fetch('/api/admin/activity-logs')
+        const data = await response.json()
+        if (data.logs) {
+          setActivityLogs(data.logs)
+        }
+      } catch (error) {
+        // Silently fail on polling errors
+      }
+    }
+
+    const interval = setInterval(fetchActivityLogs, 10000)
+    return () => clearInterval(interval)
   }, [])
 
   const formatPrice = (price: number) =>
@@ -413,62 +444,71 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Upcoming (Future dates) */}
+        {/* Activity Logs */}
         <div className="bg-white rounded-xl border border-gray-100">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-gray-900 text-sm">Coming Up</h2>
-              {upcomingBookings.filter((b) => {
-                const d = new Date(b.bookingDate)
-                const now = new Date()
-                return d.toDateString() !== now.toDateString()
-              }).length > 0 && (
-                <span className="text-[10px] font-bold text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">
-                  Next {upcomingBookings.filter((b) => new Date(b.bookingDate).toDateString() !== new Date().toDateString()).length}
+              <h2 className="font-bold text-gray-900 text-sm">Recent Activity</h2>
+              {activityLogs.length > 0 && (
+                <span className="text-[10px] font-bold text-white bg-gray-500 rounded-full w-5 h-5 flex items-center justify-center">
+                  {activityLogs.length}
                 </span>
               )}
             </div>
-            <Link href="/admin/bookings?status=confirmed" className="text-xs text-ph-blue hover:underline font-medium">
-              View all
-            </Link>
           </div>
-          <div className="divide-y divide-gray-50">
-            {(() => {
-              const futureBookings = upcomingBookings.filter((b) => {
-                const d = new Date(b.bookingDate)
-                const now = new Date()
-                return d.toDateString() !== now.toDateString()
-              })
-              if (futureBookings.length === 0) {
+          <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
+            {activityLogs.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <i className="fas fa-clock-rotate-left text-gray-300 text-lg"></i>
+                </div>
+                <p className="text-sm font-medium text-gray-400">No activity yet</p>
+                <p className="text-xs text-gray-300 mt-1">Actions will appear here</p>
+              </div>
+            ) : (
+              activityLogs.map((log) => {
+                const actionConfig: Record<string, { icon: string; color: string; bg: string }> = {
+                  resubmit_documents: { icon: 'fa-file-arrow-up', color: 'text-amber-600', bg: 'bg-amber-50' },
+                  submit_documents: { icon: 'fa-id-card', color: 'text-blue-600', bg: 'bg-blue-50' },
+                  verify_id: { icon: 'fa-circle-check', color: 'text-green-600', bg: 'bg-green-50' },
+                  reject_id: { icon: 'fa-circle-xmark', color: 'text-red-600', bg: 'bg-red-50' },
+                  create_booking: { icon: 'fa-calendar-plus', color: 'text-blue-600', bg: 'bg-blue-50' },
+                  cancel_booking: { icon: 'fa-calendar-xmark', color: 'text-red-600', bg: 'bg-red-50' },
+                  payment_submitted: { icon: 'fa-receipt', color: 'text-blue-600', bg: 'bg-blue-50' },
+                  payment_verified: { icon: 'fa-credit-card', color: 'text-green-600', bg: 'bg-green-50' },
+                  user_registered: { icon: 'fa-user-plus', color: 'text-purple-600', bg: 'bg-purple-50' },
+                  login: { icon: 'fa-right-to-bracket', color: 'text-blue-600', bg: 'bg-blue-50' },
+                  update_profile: { icon: 'fa-user-pen', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                  check_in: { icon: 'fa-qrcode', color: 'text-green-600', bg: 'bg-green-50' },
+                }
+                const cfg = actionConfig[log.action] || { icon: 'fa-circle-info', color: 'text-gray-500', bg: 'bg-gray-50' }
+
                 return (
-                  <div className="px-5 py-10 text-center">
-                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <i className="fas fa-calendar text-gray-300 text-lg"></i>
+                  <div key={log.id} className="px-5 py-3.5 flex items-start gap-3 hover:bg-gray-50/50 transition">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${cfg.bg}`}>
+                      <i className={`fas ${cfg.icon} ${cfg.color} text-xs`}></i>
                     </div>
-                    <p className="text-sm font-medium text-gray-400">No upcoming bookings</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-900 leading-snug">
+                        <span className="font-semibold">{log.userName}</span>
+                        {' '}
+                        <span className="text-gray-500">
+                          {log.description || log.action.replace(/_/g, ' ')}
+                        </span>
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[11px] text-gray-400">{timeAgo(log.createdAt)}</span>
+                        {log.entityType && (
+                          <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                            {log.entityType}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )
-              }
-              return futureBookings.slice(0, 5).map((b) => (
-                <div key={b.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-gray-50/50 transition">
-                  <div className="w-14 text-center shrink-0 bg-gray-50 rounded-lg py-1.5">
-                    <p className="text-[10px] font-medium text-gray-400 uppercase">
-                      {new Date(b.bookingDate).toLocaleDateString('en-US', { weekday: 'short' })}
-                    </p>
-                    <p className="text-sm font-extrabold text-gray-900 -mt-0.5">
-                      {new Date(b.bookingDate).getDate()}
-                    </p>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{b.courtName}</p>
-                    <p className="text-xs text-gray-400 truncate">
-                      {b.userName} &middot; {formatTime(b.startTime)}-{formatTime(b.endTime)}
-                    </p>
-                  </div>
-                  <p className="text-sm font-bold text-gray-900 shrink-0">{formatPrice(b.totalAmount)}</p>
-                </div>
-              ))
-            })()}
+              })
+            )}
           </div>
         </div>
       </div>

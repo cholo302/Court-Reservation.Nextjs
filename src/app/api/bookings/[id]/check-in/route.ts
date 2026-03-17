@@ -22,7 +22,10 @@ export async function POST(
       where: isNumericId 
         ? { id: parseInt(params.id) }
         : { bookingCode: params.id },
-      include: { payments: { orderBy: { createdAt: 'desc' }, take: 1 } },
+      include: {
+        court: true,
+        payments: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
     })
 
     if (!booking) {
@@ -42,6 +45,29 @@ export async function POST(
       where: { id: booking.id },
       data: {
         status: 'completed',
+      },
+    })
+
+    // Notify user of successful check-in
+    await prisma.notification.create({
+      data: {
+        userId: booking.userId,
+        type: 'booking_checked_in',
+        title: 'Checked In Successfully',
+        message: `You have been checked in for your booking at ${booking.court?.name}. Enjoy your game!`,
+        data: JSON.stringify({ bookingId: booking.id }),
+        channel: 'web',
+      },
+    })
+
+    // Log activity
+    await prisma.activityLog.create({
+      data: {
+        userId: parseInt(session.user.id),
+        action: 'check_in',
+        description: `Booking ${booking.bookingCode} checked in at ${booking.court?.name}`,
+        entityType: 'booking',
+        entityId: booking.id,
       },
     })
 

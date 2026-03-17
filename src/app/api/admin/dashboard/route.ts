@@ -15,11 +15,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || 'month'
 
+    // Auto-clean activity logs older than 24 hours
+    await prisma.activityLog.deleteMany({
+      where: {
+        createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
+    })
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    // For 30 days ahead
+    const thirtyDaysLater = new Date(today)
+    thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30)
 
     const startOfWeek = new Date(today)
     startOfWeek.setDate(today.getDate() - today.getDay())
@@ -30,7 +41,8 @@ export async function GET(request: NextRequest) {
 
     // Determine date range based on parameter
     let rangeStart: Date | null = null
-    if (range === 'week') rangeStart = startOfWeek
+    if (range === 'day') rangeStart = today
+    else if (range === 'week') rangeStart = startOfWeek
     else if (range === 'month') rangeStart = startOfMonth
     else if (range === 'year') rangeStart = startOfYear
 
@@ -149,19 +161,27 @@ export async function GET(request: NextRequest) {
       take: 10,
     })
 
-    // Also count confirmed bookings that haven't paid yet (awaiting payment)
+    // Count confirmed bookings that haven't submitted payment yet (truly awaiting payment)
+    // Only count FUTURE bookings - past unpaid bookings are stale/irrelevant
     const awaitingPaymentCount = await prisma.booking.count({
       where: {
         status: 'confirmed',
-        paymentStatus: { in: ['unpaid', 'partial'] },
+        paymentStatus: 'unpaid',
+        bookingDate: { gte: today },
       },
     })
 
-    // Upcoming bookings
+    // Upcoming bookings - fetch bookings from today onwards (within 30 days)
+    const tomorrowStart = new Date(today)
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+    
     const upcomingBookings = await prisma.booking.findMany({
       where: {
-        bookingDate: { gte: today },
-        status: { in: ['confirmed', 'paid'] },
+        bookingDate: { 
+          gte: today,
+          lte: thirtyDaysLater 
+        },
+        status: { in: ['confirmed', 'paid', 'completed'] },
       },
       include: {
         court: { include: { courtType: true } },
@@ -175,6 +195,15 @@ export async function GET(request: NextRequest) {
     const totalRevenue = allBookings
       .filter((b) => b.paymentStatus === 'paid')
       .reduce((sum, b) => sum + Number(b.totalAmount), 0)
+
+    // Recent activity logs
+    const recentActivityLogs = await prisma.activityLog.findMany({
+      include: {
+        user: { select: { name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 15,
+    })
 
     return NextResponse.json({
       // Reports data
@@ -217,6 +246,16 @@ export async function GET(request: NextRequest) {
         courtName: b.court?.name,
         courtType: b.court?.courtType?.name,
         userName: b.user?.name,
+      })),
+      recentActivityLogs: recentActivityLogs.map((log) => ({
+        id: log.id,
+        action: log.action,
+        description: log.description,
+        entityType: log.entityType,
+        entityId: log.entityId,
+        userName: log.user?.name || 'System',
+        userEmail: log.user?.email,
+        createdAt: log.createdAt,
       })),
     })
   } catch (error) {

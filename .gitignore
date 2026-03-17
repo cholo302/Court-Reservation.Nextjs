@@ -16,13 +16,16 @@
 # misc
 .DS_Store
 *.pem
+Thumbs.db
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
+# environment variables (NEVER commit .env with secrets)
+.env
+.env.local
 .env*.local
 
 # vercel
@@ -31,4 +34,20 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-court_reservation.sqlite
+
+# database (SQLite)
+*.sqlite
+*.sqlite-journal
+prisma/*.sqlite
+prisma/*.sqlite-journal
+
+# uploaded user content (generated at runtime)
+public/uploads/proofs/*
+public/uploads/users/*
+public/uploads/qrcodes/*
+!public/uploads/proofs/.gitkeep
+!public/uploads/users/.gitkeep
+!public/uploads/qrcodes/.gitkeep
+
+# platform-specific SWC binaries (auto-installed by npm)
+@next/swc-*

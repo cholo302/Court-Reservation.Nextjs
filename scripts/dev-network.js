@@ -12,7 +12,7 @@ function getLocalIP() {
       }
     }
   }
-  return 'localhost';
+  return null;
 }
 
 const ip = getLocalIP();
@@ -20,13 +20,16 @@ const port = process.env.PORT || 3000;
 
 console.log('\n🚀 Starting Next.js Dev Server\n');
 console.log(`📱 Local:   http://localhost:${port}`);
-console.log(`🌐 Network: http://${ip}:${port}\n`);
+if (ip) {
+  console.log(`🌐 Network: http://${ip}:${port}`);
+}
 console.log('-'.repeat(50) + '\n');
 
-// Spawn next dev with the local IP
-const child = spawn('next', ['dev', '--hostname', ip, '--port', port], {
+// Use 0.0.0.0 to listen on all interfaces (works on Windows, Mac, Linux)
+const child = spawn('npx', ['next', 'dev', '--hostname', '0.0.0.0', '--port', String(port)], {
   stdio: 'inherit',
-  shell: true
+  shell: true,
+  env: { ...process.env },
 });
 
 child.on('error', (err) => {

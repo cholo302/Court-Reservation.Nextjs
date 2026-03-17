@@ -14,3 +14,36 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch court types' }, { status: 500 })
   }
 }
+
+// POST /api/court-types - Create a new court type
+export async function POST(request: NextRequest) {
+  try {
+    const { name } = await request.json()
+
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Court type name is required' }, { status: 400 })
+    }
+
+    const trimmed = name.trim()
+    const slug = trimmed
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+
+    // Check for existing slug, append suffix if needed
+    let uniqueSlug = slug
+    const existing = await prisma.courtType.findUnique({ where: { slug } })
+    if (existing) {
+      uniqueSlug = `${slug}-${Date.now()}`
+    }
+
+    const courtType = await prisma.courtType.create({
+      data: { name: trimmed, slug: uniqueSlug },
+    })
+
+    return NextResponse.json({ courtType }, { status: 201 })
+  } catch (error) {
+    console.error('Error creating court type:', error)
+    return NextResponse.json({ error: 'Failed to create court type' }, { status: 500 })
+  }
+}

@@ -6,7 +6,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useState } from 'react'
 
 const menuItems = [
-  { href: '/admin', label: 'Dashboard', icon: 'fa-grid-2' },
+  { href: '/admin', label: 'Dashboard', icon: 'fa-gauge' },
   { href: '/admin/bookings', label: 'Bookings', icon: 'fa-calendar-check' },
   { href: '/admin/payments', label: 'Payments', icon: 'fa-money-bill-wave' },
   { href: '/admin/courts', label: 'Courts', icon: 'fa-basketball' },
@@ -47,10 +47,10 @@ export default function AdminSidebar() {
       <div className={`flex items-center h-16 border-b border-gray-100 ${collapsed ? 'justify-center px-2' : 'px-5'}`}>
         {!collapsed && (
           <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-ph-blue to-blue-600 rounded-lg flex items-center justify-center">
-              <i className="fas fa-basketball text-white text-xs"></i>
+            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-ph-yellow p-[2px]">
+              <img src="/olopsc.jpg" alt="OLOPSC" className="w-full h-full object-cover rounded-full" />
             </div>
-            <span className="font-extrabold text-gray-900 tracking-tight">CourtReserve</span>
+            <span className="font-extrabold text-gray-900 tracking-tight">OLOPSC Court Reservation</span>
           </Link>
         )}
         <button
@@ -104,14 +104,11 @@ export default function AdminSidebar() {
       <div className="border-t border-gray-100 p-3 space-y-0.5">
         <a
           href="/"
-          target="_blank"
-          rel="noopener noreferrer"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-gray-500 hover:bg-blue-50 hover:text-ph-blue transition ${collapsed ? 'justify-center' : ''}`}
           title={collapsed ? 'Client View' : undefined}
         >
           <i className="fas fa-eye w-5 text-center text-sm"></i>
           {!collapsed && <span>Client View</span>}
-          {!collapsed && <i className="fas fa-arrow-up-right-from-square text-[10px] ml-auto text-gray-300"></i>}
         </a>
         <button
           onClick={handleLogout}

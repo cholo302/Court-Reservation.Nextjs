@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -11,17 +11,30 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
   const error = searchParams.get('error')
+  const resubmitPending = searchParams.get('resubmit-pending') === 'true'
 
   const [isLoading, setIsLoading] = useState(false)
+  const [loginError, setLoginError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     remember: false,
   })
 
+  // Clear all toasts when arriving with resubmit-pending
+  useEffect(() => {
+    if (resubmitPending) {
+      // Clear any pending toasts
+      toast.dismiss()
+      // Also clear error state
+      setLoginError(null)
+    }
+  }, [resubmitPending])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setLoginError(null)
 
     try {
       const result = await signIn('credentials', {
@@ -31,18 +44,40 @@ function LoginForm() {
       })
 
       if (result?.error) {
-        toast.error(result.error)
+        setLoginError(result.error)
+        setFormData((prev) => ({ ...prev, password: '' }))
+        // Don't show error toast if user is already waiting for resubmission review
+        if (!resubmitPending) {
+          toast.error(result.error)
+        }
       } else {
-        toast.success('Welcome back!')
-        
-        // Fetch user session to check role
+        // Fetch user session to check role and verification status
         const sessionRes = await fetch('/api/auth/session')
         const session = await sessionRes.json()
         
         if (session?.user?.role === 'admin') {
+          toast.success('Welcome back!')
           router.push('/admin')
         } else {
-          router.push(callbackUrl)
+          // Check if maintenance mode is on for non-admin users
+          try {
+            const maintRes = await fetch('/api/settings/maintenance')
+            const maintData = await maintRes.json()
+            if (maintData.maintenanceMode) {
+              toast.error('The site is currently under maintenance. Please try again later.')
+              router.push('/maintenance')
+              router.refresh()
+              return
+            }
+          } catch (e) {}
+          
+          toast.success('Welcome back!')
+          if (session?.user?.verificationStatus && session.user.verificationStatus !== 'verified') {
+            // Redirect unverified users to verification page (shows form, pending, or resubmit)
+            router.push('/verify')
+          } else {
+            router.push(callbackUrl)
+          }
         }
         router.refresh()
       }
@@ -65,23 +100,22 @@ function LoginForm() {
       <div className="max-w-md w-full relative z-10">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-ph-yellow to-yellow-400 rounded-xl flex items-center justify-center shadow-lg">
-              <i className="fas fa-basketball text-ph-blue"></i>
+            <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 shadow-lg bg-ph-yellow p-[3px]">
+              <img src="/olopsc.jpg" alt="OLOPSC" className="w-full h-full object-cover rounded-full" />
             </div>
-            <span className="text-2xl font-extrabold text-white tracking-tight">CourtReserve</span>
+            <span className="text-2xl font-extrabold text-white tracking-tight">OLOPSC Court Reservation</span>
           </Link>
           <h2 className="mt-8 text-3xl font-extrabold text-white">Welcome back!</h2>
           <p className="mt-2 text-blue-200">Sign in to your account</p>
         </div>
 
-        {error && (
-          <div className="mb-4 bg-red-500/10 backdrop-blur-sm border border-red-400/20 text-red-200 p-4 rounded-xl">
-            <p>
-              <i className="fas fa-exclamation-circle mr-2"></i>
-              {error === 'CredentialsSignin'
-                ? 'Invalid email or password'
-                : 'An error occurred during sign in'}
+        {resubmitPending && (
+          <div className="mb-4 bg-blue-500/10 backdrop-blur-sm border border-blue-400/20 text-blue-200 p-4 rounded-xl">
+            <p className="font-semibold">
+              <i className="fas fa-clock mr-2"></i>
+              Documents Under Review
             </p>
+            <p className="text-sm mt-1">Your verification documents are under admin review. You can still login and browse courts.</p>
           </div>
         )}
 
@@ -164,36 +198,6 @@ function LoginForm() {
               )}
             </button>
           </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-white text-gray-400">or</span>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => signIn('facebook', { callbackUrl })}
-                className="flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition"
-              >
-                <i className="fab fa-facebook text-blue-600 text-lg mr-2"></i>
-                <span className="text-sm font-medium text-gray-600">Facebook</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => signIn('google', { callbackUrl })}
-                className="flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition"
-              >
-                <i className="fab fa-google text-red-500 text-lg mr-2"></i>
-                <span className="text-sm font-medium text-gray-600">Google</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         <p className="mt-8 text-center text-blue-200">

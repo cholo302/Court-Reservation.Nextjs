@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { PEAK_HOURS_START, PEAK_HOURS_END } from '@/lib/utils'
 
 // GET /api/courts/[id]/price - Calculate price for a booking
 export async function GET(
@@ -38,45 +37,14 @@ export async function GET(
     }
 
     const regularRate = Number(court.hourlyRate)
-    const peakRate = court.peakHourRate ? Number(court.peakHourRate) : regularRate
     const halfCourtRate = court.halfCourtRate ? Number(court.halfCourtRate) : regularRate * 0.6
 
     const dayOfWeek = new Date(date).getDay()
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
     const weekendRate = court.weekendRate ? Number(court.weekendRate) : regularRate * 1.25
 
-    // Calculate price based on each hour
-    let subtotal = 0
-    let regularHours = 0
-    let peakHours = 0
-    let regularAmount = 0
-    let peakAmount = 0
-
-    for (let hour = startHour; hour < endHour; hour++) {
-      const isPeak = hour >= PEAK_HOURS_START && hour < PEAK_HOURS_END
-      let hourlyRate = regularRate
-
-      if (isPeak) {
-        hourlyRate = peakRate
-        peakHours++
-        peakAmount += hourlyRate
-      } else if (isWeekend) {
-        hourlyRate = weekendRate
-        regularHours++
-        regularAmount += hourlyRate
-      } else {
-        regularHours++
-        regularAmount += hourlyRate
-      }
-
-      if (isHalfCourt) {
-        hourlyRate = halfCourtRate
-      }
-
-      subtotal += hourlyRate
-    }
-
-    const total = isHalfCourt ? hours * halfCourtRate : subtotal
+    const hourlyRate = isHalfCourt ? halfCourtRate : (isWeekend ? weekendRate : regularRate)
+    const total = hours * hourlyRate
     const downpayment = Math.ceil(total * (court.downpaymentPercent / 100))
     const balance = total - downpayment
 
@@ -87,14 +55,11 @@ export async function GET(
       downpayment,
       balance,
       breakdown: {
-        regularHours,
-        peakHours,
-        regularAmount: isHalfCourt ? regularHours * halfCourtRate : regularAmount,
-        peakAmount: isHalfCourt ? peakHours * halfCourtRate : peakAmount,
+        regularHours: hours,
+        regularAmount: total,
       },
       rates: {
         regular: regularRate,
-        peak: peakRate,
         halfCourt: halfCourtRate,
         weekend: weekendRate,
       },

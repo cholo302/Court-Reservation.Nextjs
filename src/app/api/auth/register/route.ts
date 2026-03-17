@@ -1,26 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { hash } from 'bcryptjs'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
+    const { firstName, middleName, lastName, email, phone, password } = await request.json()
 
-    const name = formData.get('name') as string
-    const email = formData.get('email') as string
-    const phone = formData.get('phone') as string
-    const password = formData.get('password') as string
-    const govIdType = formData.get('govIdType') as string
-    const govIdPhoto = formData.get('govIdPhoto') as File
-    const facePhoto = formData.get('facePhoto') as File
+    // Build full name
+    const name = [firstName, middleName, lastName].filter(Boolean).join(' ')
 
     // Validate required fields
-    if (!name || !email || !phone || !password || !govIdType || !govIdPhoto || !facePhoto) {
+    if (!firstName || !lastName || !email || !phone || !password) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: 'First name, last name, email, phone, and password are required' },
+        { status: 400 }
+      )
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters' },
         { status: 400 }
       )
     }
@@ -52,75 +51,36 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await hash(password, 12)
 
-    // Create user first to get ID
+    // Create user - active but not ID verified
     const user = await prisma.user.create({
       data: {
         name,
+        firstName,
+        middleName: middleName || null,
+        lastName,
         email,
         phone,
         password: hashedPassword,
         role: 'user',
-        govIdType,
-        isActive: false, // Requires admin verification
+        isActive: true,
+        isIdVerified: false,
       },
     })
 
-    // Save uploaded files
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'users', user.id.toString())
-
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
-
-    // Save gov ID photo
-    const govIdBuffer = Buffer.from(await govIdPhoto.arrayBuffer())
-    const govIdExt = govIdPhoto.name.split('.').pop()
-    const govIdFileName = `gov_id_${Date.now()}.${govIdExt}`
-    const govIdPath = join(uploadDir, govIdFileName)
-    await writeFile(govIdPath, govIdBuffer)
-
-    // Save face photo
-    const faceBuffer = Buffer.from(await facePhoto.arrayBuffer())
-    const faceExt = facePhoto.name.split('.').pop()
-    const faceFileName = `face_${Date.now()}.${faceExt}`
-    const facePath = join(uploadDir, faceFileName)
-    await writeFile(facePath, faceBuffer)
-
-    // Update user with photo paths
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        govIdPhoto: `/uploads/users/${user.id}/${govIdFileName}`,
-        facePhoto: `/uploads/users/${user.id}/${faceFileName}`,
-      },
-    })
-
-    // Create activity log (commented out until migrations are run)
-    // await prisma.activityLog.create({
-    //   data: {
-    //     userId: user.id,
-    //     action: 'register',
-    //     description: `New user registered with ${govIdType} - Awaiting verification`,
-    //     entityType: 'user',
-    //     entityId: user.id,
-    //   },
-    // })
-
-    // Create notification for user
-    await prisma.notification.create({
+    // Create activity log for registration
+    await prisma.activityLog.create({
       data: {
         userId: user.id,
-        type: 'verification_pending',
-        title: 'Account Verification Pending',
-        message:
-          'Your account has been created. Please wait for admin to verify your government ID and face photo. This may take 5 minutes to 1 hour.',
-        channel: 'web',
+        action: 'user_registered',
+        description: `New user registered: ${name}`,
+        entityType: 'user',
+        entityId: user.id,
       },
     })
 
     return NextResponse.json(
       {
-        message: 'Registration successful. Please wait for admin verification.',
+        message: 'Registration successful. Please login and verify your ID to start booking.',
         userId: user.id,
       },
       { status: 201 }

@@ -1,14 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import QRCode from 'qrcode'
 
 interface BookingDetails {
   id: number
   bookingCode: string
   status: string
+  paymentStatus: string | null
   bookingDate: string
   startTime: string
   endTime: string
@@ -38,6 +40,7 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
           id: b.id,
           bookingCode: b.bookingCode,
           status: b.status,
+          paymentStatus: b.payment?.status || null,
           bookingDate: b.bookingDate,
           startTime: b.startTime,
           endTime: b.endTime,
@@ -84,26 +87,52 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
     }).format(price)
   }
 
-  // Generate QR code URL using a free QR code API
-  const getQRCodeUrl = (code: string) => {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(code)}`
-  }
+  // Generate QR code locally on canvas — works offline on all devices
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
+  const [qrDataUrl, setQrDataUrl] = useState<string>('')
+
+  const generateQR = useCallback(async (code: string) => {
+    try {
+      // Generate as data URL for download/fallback
+      const dataUrl = await (QRCode as any).toDataURL(code, {
+        errorCorrectionLevel: 'H',
+        type: 'image/png',
+        margin: 2,
+        width: 300,
+        color: { dark: '#000000', light: '#FFFFFF' },
+      })
+      setQrDataUrl(dataUrl)
+
+      // Also render directly to canvas
+      if (qrCanvasRef.current) {
+        await (QRCode as any).toCanvas(qrCanvasRef.current, code, {
+          errorCorrectionLevel: 'H',
+          margin: 2,
+          width: 256,
+          color: { dark: '#000000', light: '#FFFFFF' },
+        })
+      }
+    } catch (err) {
+      console.error('QR generation error:', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (booking?.bookingCode) {
+      generateQR(booking.bookingCode)
+    }
+  }, [booking?.bookingCode, generateQR])
 
   const handleDownload = async () => {
-    if (!booking) return
+    if (!booking || !qrDataUrl) return
 
     try {
-      const qrUrl = getQRCodeUrl(booking.bookingCode)
-      const response = await fetch(qrUrl)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
-      link.href = url
+      link.href = qrDataUrl
       link.download = `booking-${booking.bookingCode}.png`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
       toast.success('QR code downloaded!')
     } catch (error) {
       toast.error('Failed to download QR code')
@@ -134,7 +163,8 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
   }
 
   // Check if booking is valid for QR display
-  const isValidForEntry = ['paid', 'confirmed'].includes(booking.status)
+  const isPaymentApproved = booking.paymentStatus === 'downpayment' || booking.paymentStatus === 'paid'
+  const isValidForEntry = ['paid', 'confirmed'].includes(booking.status) && isPaymentApproved
 
   if (!isValidForEntry) {
     return (
@@ -154,13 +184,15 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
             </div>
             <h1 className="text-xl font-bold text-gray-900 mb-2">QR Code Not Available</h1>
             <p className="text-gray-600 mb-6">
-              {booking.status === 'pending'
-                ? 'Please complete payment to get your entry QR code.'
-                : booking.status === 'cancelled'
+              {booking.status === 'cancelled'
                 ? 'This booking has been cancelled.'
                 : booking.status === 'completed'
                 ? 'This booking has already been completed.'
-                : 'QR code is not available for this booking status.'}
+                : !isPaymentApproved && booking.paymentStatus === 'pending'
+                ? 'Your payment proof is being reviewed by the admin. QR code will be available once payment is approved.'
+                : booking.status === 'pending'
+                ? 'Please complete payment to get your entry QR code.'
+                : 'QR code is not available for this booking.'}
             </p>
             {booking.status === 'pending' && (
               <Link
@@ -204,11 +236,20 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
           {/* QR Code */}
           <div className="p-8 flex flex-col items-center">
             <div className="bg-white p-4 rounded-xl border-2 border-gray-100 mb-4">
-              <img
-                src={getQRCodeUrl(booking.bookingCode)}
-                alt="Booking QR Code"
-                className="w-64 h-64"
+              {/* Canvas for screen display */}
+              <canvas
+                ref={qrCanvasRef}
+                className="w-64 h-64 print:hidden"
+                style={{ imageRendering: 'pixelated' }}
               />
+              {/* Image fallback for printing (some browsers skip canvas in print) */}
+              {qrDataUrl && (
+                <img
+                  src={qrDataUrl}
+                  alt="Booking QR Code"
+                  className="w-64 h-64 hidden print:block"
+                />
+              )}
             </div>
 
             <div className="text-center mb-6">

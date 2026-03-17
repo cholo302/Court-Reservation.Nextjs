@@ -12,7 +12,7 @@ body {
 
 /* Hero section */
 .hero-gradient {
-  background: linear-gradient(135deg, #0038A8 0%, #1e3a8a 40%, #1e40af 70%, #2563eb 100%);
+  background: linear-gradient(135deg, #1d3178 0%, #162560 40%, #111d4e 70%, #1a2c6c 100%);
   position: relative;
   overflow: hidden;
 }
@@ -20,7 +20,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,255,255,0.12) 0%, transparent 60%);
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,223,86,0.10) 0%, transparent 60%);
   pointer-events: none;
 }
 
@@ -103,7 +103,7 @@ a, button {
 
 /* Gradient text utility */
 .gradient-text {
-  background: linear-gradient(135deg, #0038A8, #2563eb);
+  background: linear-gradient(135deg, #1d3178, #4e5fae);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

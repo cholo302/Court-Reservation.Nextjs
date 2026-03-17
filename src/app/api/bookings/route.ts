@@ -4,6 +4,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { generateBookingCode, RESERVATION_EXPIRY_MINUTES } from '@/lib/utils'
 
+// Helper to get a setting from DB with a default fallback
+async function getSetting(key: string, defaultValue: string): Promise<string> {
+  const row = await prisma.setting.findUnique({ where: { key } })
+  return row?.value ?? defaultValue
+}
+
 // GET /api/bookings - List user's bookings
 export async function GET(request: NextRequest) {
   try {
@@ -32,8 +38,21 @@ export async function GET(request: NextRequest) {
           },
         },
       }
-    } else if (status && status !== 'paid') {
+    } else if (status === 'downpayment') {
+      paymentStatusFilter = {
+        payments: {
+          some: {
+            status: 'downpayment',
+          },
+        },
+      }
+    } else if (status && status !== 'paid' && status !== 'downpayment') {
       where.status = status
+    } else if (!status) {
+      // When no status filter is provided, include all statuses
+      where.status = {
+        in: ['pending', 'confirmed', 'paid', 'completed', 'cancelled', 'no_show', 'expired'],
+      }
     }
 
     const [bookings, total] = await Promise.all([
@@ -110,6 +129,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (!user.isIdVerified) {
+      return NextResponse.json(
+        { error: 'You need to verify your ID before booking a court. Please go to the Verify ID page.' },
+        { status: 403 }
+      )
+    }
+
     const data = await request.json()
 
     // Validate required fields
@@ -128,6 +154,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Court not found' }, { status: 404 })
     }
 
+    if (!court.isActive) {
+      return NextResponse.json({ error: 'This court is currently unavailable for booking.' }, { status: 400 })
+    }
+
+    // Enforce booking settings from admin settings
+    const minBookingHours = parseInt(await getSetting('minBookingHours', '1'))
+    const maxAdvanceBookingDays = parseInt(await getSetting('maxAdvanceBookingDays', '30'))
+    const bookingStartHour = parseInt(await getSetting('bookingStartHour', '6'))
+    const bookingEndHour = parseInt(await getSetting('bookingEndHour', '22'))
+
+    // Validate start/end within operating hours
+    const reqStartHour = parseInt(data.startTime.split(':')[0])
+    const reqEndHour = parseInt(data.endTime.split(':')[0])
+
+    if (reqStartHour < bookingStartHour || reqEndHour > bookingEndHour) {
+      return NextResponse.json(
+        { error: `Bookings must be between ${bookingStartHour}:00 and ${bookingEndHour}:00` },
+        { status: 400 }
+      )
+    }
+
+    // Validate minimum duration
+    const requestedDuration = reqEndHour - reqStartHour
+    if (requestedDuration < minBookingHours) {
+      return NextResponse.json(
+        { error: `Minimum booking duration is ${minBookingHours} hour(s)` },
+        { status: 400 }
+      )
+    }
+
+    // Validate max advance booking days
+    const bookingDate = new Date(data.bookingDate)
+    const todayDate = new Date()
+    todayDate.setHours(0, 0, 0, 0)
+    bookingDate.setHours(0, 0, 0, 0)
+    const daysDiff = Math.ceil((bookingDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24))
+    if (daysDiff > maxAdvanceBookingDays) {
+      return NextResponse.json(
+        { error: `Bookings can only be made up to ${maxAdvanceBookingDays} days in advance` },
+        { status: 400 }
+      )
+    }
+
     // Check availability - only PAID bookings should block the slot
     // Unpaid bookings (even if confirmed) don't reserve the slot
     const existingBooking = await prisma.booking.findFirst({
@@ -135,7 +204,7 @@ export async function POST(request: NextRequest) {
         courtId: data.courtId,
         bookingDate: new Date(data.bookingDate),
         status: { in: ['confirmed', 'paid', 'completed'] },
-        paymentStatus: { in: ['paid', 'partial', 'downpayment'] },
+        paymentStatus: { in: ['paid', 'downpayment'] },
         OR: [
           {
             AND: [
@@ -179,11 +248,8 @@ export async function POST(request: NextRequest) {
     // Generate booking code and QR code
     const bookingCode = generateBookingCode()
 
-    // Set expiry for pay-at-venue reservations
-    let expiresAt = null
-    if (data.paymentType === 'venue') {
-      expiresAt = new Date(Date.now() + RESERVATION_EXPIRY_MINUTES * 60 * 1000)
-    }
+    // Set expiry for all bookings - 30 minute payment window
+    const expiresAt = new Date(Date.now() + RESERVATION_EXPIRY_MINUTES * 60 * 1000)
 
     const booking = await prisma.booking.create({
       data: {
@@ -215,16 +281,16 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create activity log (commented out until migrations are run)
-    // await prisma.activityLog.create({
-    //   data: {
-    //     userId,
-    //     action: 'booking_created',
-    //     description: `New booking created for ${court.name}`,
-    //     entityType: 'booking',
-    //     entityId: booking.id,
-    //   },
-    // })
+    // Create activity log
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        action: 'create_booking',
+        description: `New booking created for ${court.name}`,
+        entityType: 'booking',
+        entityId: booking.id,
+      },
+    })
 
     // Create notification
     await prisma.notification.create({

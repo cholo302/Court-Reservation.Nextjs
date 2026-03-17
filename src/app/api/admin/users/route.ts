@@ -24,13 +24,12 @@ export async function GET(request: NextRequest) {
 
     // Apply filter
     if (filter === 'pending') {
-      where.govIdType = { not: null }
-      where.isActive = false
-    } else if (filter === 'active') {
-      where.isActive = true
-      where.isBlacklisted = false
-    } else if (filter === 'inactive') {
-      where.isActive = false
+      where.govIdPhoto = { not: null }
+      where.isIdVerified = false
+    } else if (filter === 'verified') {
+      where.isIdVerified = true
+    } else if (filter === 'not_verified') {
+      where.isIdVerified = false
     } else if (filter === 'blacklisted') {
       where.isBlacklisted = true
     }
@@ -56,12 +55,26 @@ export async function GET(request: NextRequest) {
           isBlacklisted: true,
           blacklistReason: true,
           isActive: true,
+          isIdInvalid: true,
+          isIdVerified: true,
           govIdType: true,
           govIdPhoto: true,
+          govIdNumber: true,
+          govIdName: true,
+          govIdBirthdate: true,
+          govIdExpiry: true,
+          govIdAddress: true,
           facePhoto: true,
           createdAt: true,
+          updatedAt: true,
           _count: {
             select: { bookings: true },
+          },
+          activityLogs: {
+            where: { action: 'resubmit_documents' },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: { createdAt: true },
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -75,6 +88,7 @@ export async function GET(request: NextRequest) {
       users: users.map((u) => ({
         ...u,
         bookingsCount: u._count.bookings,
+        hasResubmittedDocs: u.activityLogs.length > 0 && !u.isIdVerified,
       })),
       total,
       page,
@@ -133,12 +147,37 @@ export async function POST(request: NextRequest) {
         })
         break
 
-      case 'activate':
-      case 'verify':
+      case 'not_valid_id':
         updatedUser = await prisma.user.update({
           where: { id: userId },
           data: {
-            isActive: true,
+            isIdInvalid: true,
+            isIdVerified: false,
+          },
+        })
+
+        // Clear resubmit activity logs (removes "New" badge)
+        await prisma.activityLog.deleteMany({
+          where: { userId, action: 'resubmit_documents' },
+        })
+
+        // Notify user
+        await prisma.notification.create({
+          data: {
+            userId: userId,
+            type: 'id_invalid',
+            title: 'ID Verification Failed',
+            message: 'Your government ID or selfie was found to be invalid. Please upload valid documents to continue using our service.',
+            channel: 'web',
+          },
+        })
+        break
+
+      case 'valid_id':
+        updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            isIdInvalid: false,
           },
         })
 
@@ -146,26 +185,104 @@ export async function POST(request: NextRequest) {
         await prisma.notification.create({
           data: {
             userId: userId,
-            type: 'account_activated',
-            title: 'Account Verified',
-            message: 'Your account has been verified. You can now login and make bookings.',
+            type: 'id_valid',
+            title: 'ID Verification Approved',
+            message: 'Your government ID and selfie have been approved. You can now login and use our service.',
             channel: 'web',
           },
         })
         break
 
-      case 'deactivate':
+      case 'verify_id':
         updatedUser = await prisma.user.update({
           where: { id: userId },
           data: {
-            isActive: false,
+            isIdVerified: true,
+            isIdInvalid: false,
           },
         })
+
+        // Clear resubmit activity logs (removes "New" badge)
+        await prisma.activityLog.deleteMany({
+          where: { userId, action: 'resubmit_documents' },
+        })
+
+        // Notify user
+        await prisma.notification.create({
+          data: {
+            userId: userId,
+            type: 'id_verified',
+            title: 'ID Verified',
+            message: 'Your government ID has been verified! You can now book courts.',
+            channel: 'web',
+          },
+        })
+        break
+
+      case 'unverify_id':
+        updatedUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            isIdVerified: false,
+            isIdInvalid: true,
+          },
+        })
+
+        // Notify user
+        await prisma.notification.create({
+          data: {
+            userId: userId,
+            type: 'id_unverified',
+            title: 'ID Verification Revoked',
+            message: 'Your ID verification has been revoked. Please re-submit your documents.',
+            channel: 'web',
+          },
+        })
+        break
+
+      case 'request_resubmit':
+        // Notify user to resubmit documents
+        const resubmitMessage = reason
+          ? `Your documents were not accepted. Reason: ${reason}. Please resubmit your government ID and selfie photo.`
+          : 'Please resubmit your government ID and selfie photo.'
+
+        await prisma.notification.create({
+          data: {
+            userId: userId,
+            type: 'documents_resubmit',
+            title: 'Resubmit Your Documents',
+            message: resubmitMessage,
+            channel: 'web',
+          },
+        })
+
+        updatedUser = user
         break
 
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
+
+    // Log admin action
+    const actionDescriptions: Record<string, string> = {
+      blacklist: `User ${user.email} was blacklisted`,
+      unblacklist: `User ${user.email} was removed from blacklist`,
+      not_valid_id: `User ${user.email}'s ID was marked as invalid`,
+      valid_id: `User ${user.email}'s ID was marked as valid`,
+      verify_id: `User ${user.email}'s ID was verified`,
+      unverify_id: `User ${user.email}'s ID verification was revoked`,
+      request_resubmit: `User ${user.email} was asked to resubmit documents`,
+    }
+
+    await prisma.activityLog.create({
+      data: {
+        userId: parseInt(session.user.id),
+        action: action,
+        description: actionDescriptions[action] || `Admin action: ${action} on user ${user.email}`,
+        entityType: 'user',
+        entityId: userId,
+      },
+    })
 
     return NextResponse.json({ success: true, user: updatedUser })
   } catch (error) {

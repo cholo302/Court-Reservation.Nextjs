@@ -2,7 +2,7 @@ import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 
 export default withAuth(
-  function middleware(req) {
+  async function middleware(req) {
     const token = req.nextauth.token
     const path = req.nextUrl.pathname
 
@@ -10,6 +10,33 @@ export default withAuth(
     if (path.startsWith('/admin')) {
       if (token?.role !== 'admin') {
         return NextResponse.redirect(new URL('/', req.url))
+      }
+    }
+
+    // Maintenance mode check — skip for admin users, admin routes, API routes, login/register, and maintenance page itself
+    const isAdmin = token?.role === 'admin'
+    const skipMaintenance =
+      isAdmin ||
+      path.startsWith('/api') ||
+      path.startsWith('/admin') ||
+      path.startsWith('/login') ||
+      path.startsWith('/register') ||
+      path === '/maintenance'
+
+    if (!skipMaintenance) {
+      try {
+        const res = await fetch(new URL('/api/settings/maintenance', req.url), {
+          cache: 'no-store',
+          headers: { 'x-middleware-check': '1' },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.maintenanceMode) {
+            return NextResponse.redirect(new URL('/maintenance', req.url))
+          }
+        }
+      } catch (e) {
+        // If fetch fails, allow through
       }
     }
 
@@ -27,6 +54,7 @@ export default withAuth(
           '/register',
           '/courts',
           '/forgot-password',
+          '/reset-password',
         ]
 
         // Check if it's a public route or public API
@@ -43,6 +71,14 @@ export default withAuth(
           return true
         }
 
+        if (path.startsWith('/api/settings')) {
+          return true
+        }
+
+        if (path.startsWith('/maintenance')) {
+          return true
+        }
+
         // All other routes require authentication
         return !!token
       },
@@ -52,11 +88,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/bookings/:path*',
-    '/profile/:path*',
-    '/admin/:path*',
-    '/api/bookings/:path*',
-    '/api/admin/:path*',
-    '/api/profile/:path*',
+    '/((?!_next/static|_next/image|favicon\.ico|uploads|olopsc\\.jpg|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.ico).*)',
   ],
 }

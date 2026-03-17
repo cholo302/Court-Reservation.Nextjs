@@ -1,70 +1,108 @@
 # Court Reservation - Next.js
 
-This is the Next.js version of the Court Reservation system, translated from the original PHP Laravel application.
+A court reservation system built with Next.js 14, TypeScript, Prisma, and SQLite.
 
 ## Features
 
 - User authentication with NextAuth.js
 - Court browsing and searching
 - Real-time availability checking
-- Booking management
-- Payment proof upload
-- Admin dashboard
+- Booking management with QR codes
+- Payment proof upload (GCash)
+- Admin dashboard with reports
 - User profile management
 
 ## Tech Stack
 
-- **Framework:** Next.js 14 with App Router
+- **Framework:** Next.js 14 (App Router)
 - **Language:** TypeScript
-- **Database:** MySQL with Prisma ORM
+- **Database:** SQLite via Prisma ORM
 - **Styling:** Tailwind CSS
 - **Authentication:** NextAuth.js
-- **Icons:** Font Awesome
 
-## Getting Started
+## Quick Start (Clone & Run)
 
 ### Prerequisites
 
-- Node.js 18+ 
-- MySQL database
-- npm or yarn
+- **Node.js 18+** — [Download here](https://nodejs.org/)
+- **npm** (comes with Node.js)
+- No database server needed — uses SQLite (file-based)
 
-### Installation
+### 1. Clone the repository
 
-1. Install dependencies:
+```bash
+git clone <your-repo-url>
+cd Court-Reservation.Nextjs
+```
+
+### 2. Install dependencies
+
 ```bash
 npm install
 ```
 
-2. Copy environment file and configure:
+> Prisma client is auto-generated after install via the `postinstall` script.
+
+### 3. Run the setup script (first time only)
+
 ```bash
-cp .env.example .env
+npm run setup
 ```
 
-3. Update `.env` with your database credentials:
-```
-DATABASE_URL="mysql://root:@localhost:3306/court_reservation"
-NEXTAUTH_SECRET="your-secret-key"
-NEXTAUTH_URL="http://localhost:3000"
-```
+This will automatically:
+- Copy `.env.example` → `.env`
+- Generate Prisma client
+- Create the SQLite database
+- Seed an admin user and sample courts
+- Create upload directories
 
-4. Generate Prisma client and run migrations:
-```bash
-npx prisma generate
-npx prisma db push
-```
+### 4. Start the development server
 
-5. (Optional) Seed the database:
-```bash
-npx prisma db seed
-```
-
-6. Start the development server:
 ```bash
 npm run dev
 ```
 
-7. Open [http://localhost:3000](http://localhost:3000)
+### 5. Open the app
+
+- **Local:** [http://localhost:3000](http://localhost:3000)
+- **Admin login:** `admin@court.com` / `admin123`
+
+---
+
+## Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run setup` | First-time setup (env, DB, seeds) |
+| `npm run dev` | Start dev server (network accessible) |
+| `npm run dev:local` | Start dev server (localhost only) |
+| `npm run build` | Build for production |
+| `npm start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm run seed:admin` | Seed admin user |
+| `npm run seed:courts` | Seed sample courts |
+| `npm run db:push` | Push schema to database |
+| `npm run db:generate` | Regenerate Prisma client |
+
+## Environment Variables
+
+Copy `.env.example` to `.env` (the setup script does this automatically):
+
+```bash
+# Windows
+copy .env.example .env
+
+# Mac/Linux
+cp .env.example .env
+```
+
+See `.env.example` for all available options. The only required variables are:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | SQLite database path | `file:./court_reservation.sqlite` |
+| `NEXTAUTH_URL` | App URL | `http://localhost:3000` |
+| `NEXTAUTH_SECRET` | JWT secret key | Must be set |
 
 ## Project Structure
 
@@ -87,34 +125,59 @@ src/
 │   ├── prisma.ts         # Prisma client
 │   └── utils.ts          # Helper functions
 └── types/                # TypeScript types
-    └── index.ts
 
 prisma/
 └── schema.prisma         # Database schema
+
+scripts/
+├── setup.js              # First-time setup
+├── dev-network.js        # Dev server (network mode)
+├── seed-admin.js         # Seed admin user
+└── seed-courts.js        # Seed sample courts
 ```
 
 ## API Routes
 
 ### Public
-- `GET /api/courts` - List courts
-- `GET /api/courts/[id]` - Court details
-- `GET /api/courts/[id]/slots` - Available time slots
+- `GET /api/courts` — List courts
+- `GET /api/courts/[id]` — Court details
+- `GET /api/courts/[id]/slots` — Available time slots
 
 ### Protected (User)
-- `GET /api/bookings` - User's bookings
-- `POST /api/bookings` - Create booking
-- `GET /api/bookings/[id]` - Booking details
-- `GET /api/profile` - User profile
-- `PUT /api/profile` - Update profile
+- `GET /api/bookings` — User's bookings
+- `POST /api/bookings` — Create booking
+- `GET /api/bookings/[id]` — Booking details
+- `GET /api/profile` — User profile
+- `PUT /api/profile` — Update profile
 
 ### Admin
-- `GET /api/admin/dashboard` - Dashboard stats
-- `GET /api/admin/bookings` - All bookings
-- `GET /api/admin/users` - All users
+- `GET /api/admin/dashboard` — Dashboard stats
+- `GET /api/admin/bookings` — All bookings
+- `GET /api/admin/users` — All users
 
-## Database
+## Troubleshooting
 
-The application uses the same MySQL database as the original PHP version. Make sure the `court_reservation` database exists and has the required tables.
+### `Failed to load SWC binary`
+Delete `node_modules` and reinstall:
+```bash
+rm -rf node_modules .next
+npm install
+```
+
+### Database errors
+Reset the database:
+```bash
+rm prisma/court_reservation.sqlite
+npx prisma db push
+npm run seed:admin
+npm run seed:courts
+```
+
+### Port already in use
+Use a different port:
+```bash
+PORT=3001 npm run dev
+```
 
 ## License
 

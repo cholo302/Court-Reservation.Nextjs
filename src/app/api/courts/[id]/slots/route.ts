@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { OPERATING_START_HOUR, OPERATING_END_HOUR, PEAK_HOURS_START, PEAK_HOURS_END } from '@/lib/utils'
+
+// Helper to get a setting from DB with a default fallback
+async function getSetting(key: string, defaultValue: string): Promise<string> {
+  const row = await prisma.setting.findUnique({ where: { key } })
+  return row?.value ?? defaultValue
+}
 
 // GET /api/courts/[id]/slots - Get available time slots for a date
 export async function GET(
@@ -20,11 +25,22 @@ export async function GET(
       return NextResponse.json({ error: 'Court not found' }, { status: 404 })
     }
 
+    if (!court.isActive) {
+      return NextResponse.json({ closed: true, reason: 'This court is currently unavailable.', slots: [] })
+    }
+
     // Check for schedule exceptions (closed days)
+    // Parse as local time to avoid UTC off-by-one in UTC+8 timezone
+    const [exYr, exMo, exDy] = date.split('-').map(Number)
+    const localDateStart = new Date(exYr, exMo - 1, exDy)
+    const localDateEnd = new Date(exYr, exMo - 1, exDy + 1)
     const scheduleException = await prisma.courtSchedule.findFirst({
       where: {
         courtId,
-        date: new Date(date),
+        date: {
+          gte: localDateStart,
+          lt: localDateEnd,
+        },
       },
     })
 
@@ -36,14 +52,17 @@ export async function GET(
       })
     }
 
-    // Get operating hours
+    // Get operating hours from settings
+    const dbStartHour = parseInt(await getSetting('bookingStartHour', '6'))
+    const dbEndHour = parseInt(await getSetting('bookingEndHour', '22'))
+
     const operatingHours = court.operatingHours ? JSON.parse(court.operatingHours) : null
     const dayOfWeek = new Date(date).getDay()
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     const dayName = days[dayOfWeek]
 
-    let startHour = OPERATING_START_HOUR
-    let endHour = OPERATING_END_HOUR
+    let startHour = dbStartHour
+    let endHour = dbEndHour
 
     if (operatingHours && operatingHours[dayName]) {
       const dayHours = operatingHours[dayName]
@@ -60,15 +79,22 @@ export async function GET(
 
     // Get existing bookings for this date - only PAID bookings block slots
     // Unpaid bookings (even if confirmed) should NOT block slots so others can book
+    // Use local-time date range to avoid UTC off-by-one in timezone like UTC+8
+    const [qyr, qmo, qdy] = date.split('-').map(Number)
+    const dateStart = new Date(qyr, qmo - 1, qdy)
+    const dateEnd = new Date(qyr, qmo - 1, qdy + 1)
     const existingBookings = await prisma.booking.findMany({
       where: {
         courtId,
-        bookingDate: new Date(date),
+        bookingDate: {
+          gte: dateStart,
+          lt: dateEnd,
+        },
         status: {
           in: ['confirmed', 'paid', 'completed'],
         },
         paymentStatus: {
-          in: ['paid', 'partial', 'downpayment'],  // Only block if payment was made
+          in: ['paid', 'downpayment'],  // Only block if payment was verified by admin
         },
       },
       select: {
@@ -80,9 +106,17 @@ export async function GET(
     // Generate time slots
     const slots = []
     const regularRate = Number(court.hourlyRate)
-    const peakRate = court.peakHourRate ? Number(court.peakHourRate) : regularRate
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
     const weekendRate = court.weekendRate ? Number(court.weekendRate) : regularRate * 1.25
+
+    // Check if the date is today to see if we need to exclude past hours
+    // Parse date as LOCAL time (not UTC) to avoid timezone off-by-one issues
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const [yr, mo, dy] = date.split('-').map(Number)
+    const selectedDate = new Date(yr, mo - 1, dy) // local midnight
+    const isToday = today.getTime() === selectedDate.getTime()
+    const currentHour = new Date().getHours()
 
     for (let hour = startHour; hour < endHour; hour++) {
       const startTime = `${hour.toString().padStart(2, '0')}:00`
@@ -95,20 +129,15 @@ export async function GET(
         return hour >= bookingStart && hour < bookingEnd
       })
 
-      const isPeak = hour >= PEAK_HOURS_START && hour < PEAK_HOURS_END
-      let rate = regularRate
-      
-      if (isPeak) {
-        rate = peakRate
-      } else if (isWeekend) {
-        rate = weekendRate
-      }
+      // Check if this slot is in the past (for today only)
+      const isPast = isToday && hour <= currentHour
+
+      const rate = isWeekend ? weekendRate : regularRate
 
       slots.push({
         start: startTime,
         end: endTime,
-        available: !isBooked,
-        isPeak,
+        available: !isBooked && !isPast,
         isWeekend,
         rate,
       })
@@ -121,7 +150,6 @@ export async function GET(
         id: court.id,
         name: court.name,
         hourlyRate: regularRate,
-        peakHourRate: peakRate,
         halfCourtRate: court.halfCourtRate ? Number(court.halfCourtRate) : null,
         downpaymentPercent: court.downpaymentPercent,
         minBookingHours: court.minBookingHours,

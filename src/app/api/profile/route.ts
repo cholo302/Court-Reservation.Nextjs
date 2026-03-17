@@ -3,7 +3,39 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // Check for email query parameter (for resubmit flow - public)
+  const { searchParams } = new URL(req.url)
+  const userEmail = searchParams.get('email')
+  
+  if (userEmail) {
+    try {
+      console.log('Profile API: Fetching user by email:', userEmail)
+      const user = await prisma.user.findUnique({
+        where: { email: userEmail },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          govIdType: true,
+        },
+      })
+
+      if (!user) {
+        console.log('Profile API: User not found for email:', userEmail)
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+
+      console.log('Profile API: User found:', user.id)
+      return NextResponse.json(user, { status: 200 })
+    } catch (error) {
+      console.error('Profile API: Error fetching user:', error)
+      return NextResponse.json({ error: 'Failed to verify email' }, { status: 500 })
+    }
+  }
+
+  // Regular authenticated profile fetch
   const session = await getServerSession(authOptions)
 
   if (!session) {
@@ -16,9 +48,14 @@ export async function GET() {
       select: {
         id: true,
         name: true,
+        firstName: true,
+        middleName: true,
+        lastName: true,
         email: true,
         phone: true,
         profileImage: true,
+        facePhoto: true,
+        govIdType: true,
         createdAt: true,
       },
     })
@@ -49,7 +86,7 @@ export async function GET() {
     return NextResponse.json({
       user: {
         ...user,
-        avatar: user.profileImage,
+        avatar: user.profileImage || user.facePhoto,
         preferences,
       },
       stats,
@@ -69,17 +106,25 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { name, phone } = body
+    const { firstName, middleName, lastName, phone } = body
+
+    const name = [firstName, middleName, lastName].filter(Boolean).join(' ')
 
     const user = await prisma.user.update({
       where: { id: parseInt(session.user.id) },
       data: {
         name,
+        firstName: firstName || '',
+        middleName: middleName || null,
+        lastName: lastName || '',
         phone,
       },
       select: {
         id: true,
         name: true,
+        firstName: true,
+        middleName: true,
+        lastName: true,
         email: true,
         phone: true,
       },

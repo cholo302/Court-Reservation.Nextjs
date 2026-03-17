@@ -98,9 +98,58 @@ export async function POST(request: NextRequest) {
     await prisma.booking.update({
       where: { id: parseInt(bookingId) },
       data: {
-        paymentStatus: 'partial',
+        paymentStatus: 'processing',
       },
     })
+
+    // Log activity
+    const bookingWithCourt = await prisma.booking.findUnique({
+      where: { id: parseInt(bookingId) },
+      include: { court: true },
+    })
+
+    await prisma.activityLog.create({
+      data: {
+        userId: parseInt(session.user.id),
+        action: 'payment_submitted',
+        description: `Payment proof submitted for ${bookingWithCourt?.court?.name || 'booking'} (₱${paymentAmount.toFixed(2)})`,
+        entityType: 'payment',
+        entityId: payment.id,
+      },
+    })
+
+    // Notify the user that their payment was submitted
+    await prisma.notification.create({
+      data: {
+        userId: parseInt(session.user.id),
+        type: 'payment_submitted',
+        title: 'Payment Submitted',
+        message: `Your payment of ₱${paymentAmount.toFixed(2)} for ${bookingWithCourt?.court?.name || 'your booking'} has been submitted and is awaiting admin verification.`,
+        data: JSON.stringify({ bookingId: parseInt(bookingId), paymentId: payment.id }),
+        channel: 'web',
+      },
+    })
+
+    // Notify all admins about the new payment
+    const admins = await prisma.user.findMany({
+      where: { role: 'admin' },
+      select: { id: true },
+    })
+
+    await Promise.all(
+      admins.map((admin) =>
+        prisma.notification.create({
+          data: {
+            userId: admin.id,
+            type: 'payment_received',
+            title: 'New Payment Received',
+            message: `${session.user.name || 'A user'} submitted payment of ₱${paymentAmount.toFixed(2)} for ${bookingWithCourt?.court?.name || 'a booking'}. Please review and verify.`,
+            data: JSON.stringify({ bookingId: parseInt(bookingId), paymentId: payment.id }),
+            channel: 'web',
+          },
+        })
+      )
+    )
 
     return NextResponse.json(
       {

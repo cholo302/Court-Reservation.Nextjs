@@ -19,26 +19,17 @@ export default function EditCourtPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [courtTypes, setCourtTypes] = useState<CourtType[]>([])
-  const [amenityInput, setAmenityInput] = useState('')
+  const [thumbnailUploading, setThumbnailUploading] = useState(false)
   
   const [form, setForm] = useState({
     name: '',
     courtTypeId: '',
+    customCourtTypeName: '',
     description: '',
     location: '',
-    barangay: '',
-    city: '',
-    province: '',
     hourlyRate: '',
-    peakHourRate: '',
-    halfCourtRate: '',
-    weekendRate: '',
-    capacity: '',
-    amenities: [] as string[],
     thumbnail: '',
     rules: '',
-    minBookingHours: '1',
-    maxBookingHours: '4',
     downpaymentPercent: '50',
     isActive: true,
   })
@@ -65,21 +56,12 @@ export default function EditCourtPage() {
           setForm({
             name: court.name || '',
             courtTypeId: court.courtTypeId?.toString() || '',
+            customCourtTypeName: '',
             description: court.description || '',
             location: court.location || '',
-            barangay: court.barangay || '',
-            city: court.city || '',
-            province: court.province || '',
             hourlyRate: court.hourlyRate?.toString() || '',
-            peakHourRate: court.peakHourRate?.toString() || '',
-            halfCourtRate: court.halfCourtRate?.toString() || '',
-            weekendRate: court.weekendRate?.toString() || '',
-            capacity: court.capacity?.toString() || '',
-            amenities: Array.isArray(court.amenities) ? court.amenities : [],
             thumbnail: court.thumbnail || '',
             rules: court.rules || '',
-            minBookingHours: court.minBookingHours?.toString() || '1',
-            maxBookingHours: court.maxBookingHours?.toString() || '4',
             downpaymentPercent: court.downpaymentPercent?.toString() || '50',
             isActive: court.isActive ?? true,
           })
@@ -103,15 +85,23 @@ export default function EditCourtPage() {
     }
   }
 
-  const addAmenity = () => {
-    if (amenityInput.trim() && !form.amenities.includes(amenityInput.trim())) {
-      setForm({ ...form, amenities: [...form.amenities, amenityInput.trim()] })
-      setAmenityInput('')
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setThumbnailUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('thumbnail', file)
+      const res = await fetch('/api/courts/upload-thumbnail', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Upload failed')
+      setForm((f) => ({ ...f, thumbnail: data.url }))
+      toast.success('Image uploaded')
+    } catch (err: any) {
+      toast.error(err.message || 'Upload failed')
+    } finally {
+      setThumbnailUploading(false)
     }
-  }
-
-  const removeAmenity = (amenity: string) => {
-    setForm({ ...form, amenities: form.amenities.filter((a) => a !== amenity) })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,30 +112,41 @@ export default function EditCourtPage() {
       return
     }
 
+    if (form.courtTypeId === 'other' && !form.customCourtTypeName.trim()) {
+      toast.error('Please specify the court type name')
+      return
+    }
+
     setSaving(true)
 
     try {
+      let resolvedCourtTypeId = parseInt(form.courtTypeId)
+
+      if (form.courtTypeId === 'other') {
+        const ctRes = await fetch('/api/court-types', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: form.customCourtTypeName.trim() }),
+        })
+        if (!ctRes.ok) {
+          const ctErr = await ctRes.json()
+          throw new Error(ctErr.error || 'Failed to create court type')
+        }
+        const ctData = await ctRes.json()
+        resolvedCourtTypeId = ctData.courtType.id
+      }
+
       const response = await fetch(`/api/courts/${courtId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: form.name,
-          courtTypeId: parseInt(form.courtTypeId),
+          courtTypeId: resolvedCourtTypeId,
           description: form.description || null,
           location: form.location || null,
-          barangay: form.barangay || null,
-          city: form.city || null,
-          province: form.province || null,
           hourlyRate: parseFloat(form.hourlyRate),
-          peakHourRate: form.peakHourRate ? parseFloat(form.peakHourRate) : null,
-          halfCourtRate: form.halfCourtRate ? parseFloat(form.halfCourtRate) : null,
-          weekendRate: form.weekendRate ? parseFloat(form.weekendRate) : null,
-          capacity: form.capacity ? parseInt(form.capacity) : null,
-          amenities: form.amenities.length > 0 ? form.amenities : null,
           thumbnail: form.thumbnail || null,
           rules: form.rules || null,
-          minBookingHours: parseInt(form.minBookingHours),
-          maxBookingHours: parseInt(form.maxBookingHours),
           downpaymentPercent: parseInt(form.downpaymentPercent),
           isActive: form.isActive,
         }),
@@ -221,7 +222,20 @@ export default function EditCourtPage() {
                     {type.name}
                   </option>
                 ))}
+                <option value="other">Other (specify below)</option>
               </select>
+              {form.courtTypeId === 'other' && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    name="customCourtTypeName"
+                    value={form.customCourtTypeName}
+                    onChange={handleChange}
+                    placeholder="Enter court type name..."
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2">
@@ -240,7 +254,23 @@ export default function EditCourtPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Thumbnail URL
+                Thumbnail
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer w-fit mb-2">
+                <span className="px-3 py-1.5 bg-ph-blue text-white text-sm rounded-lg hover:bg-blue-700 transition flex items-center gap-1.5">
+                  {thumbnailUploading ? (
+                    <><i className="fas fa-spinner fa-spin"></i> Uploading...</>
+                  ) : (
+                    <><i className="fas fa-upload"></i> Upload Photo</>
+                  )}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleThumbnailUpload}
+                  disabled={thumbnailUploading}
+                />
               </label>
               <input
                 type="text"
@@ -248,22 +278,20 @@ export default function EditCourtPage() {
                 value={form.thumbnail}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                placeholder="https://example.com/image.jpg"
+                placeholder="Or paste image URL..."
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Capacity (players)
-              </label>
-              <input
-                type="number"
-                name="capacity"
-                value={form.capacity}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                placeholder="e.g., 10"
-              />
+              {form.thumbnail && (
+                <div className="mt-2 relative w-full h-36 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                  <img src={form.thumbnail} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, thumbnail: '' }))}
+                    className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/70"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2">
@@ -284,63 +312,16 @@ export default function EditCourtPage() {
 
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Location</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Address
-              </label>
-              <input
-                type="text"
-                name="location"
-                value={form.location}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                placeholder="e.g., 123 Sports Ave, Marikina Sports Center"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Barangay
-              </label>
-              <input
-                type="text"
-                name="barangay"
-                value={form.barangay}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                placeholder="e.g., Sto. Niño"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                City
-              </label>
-              <input
-                type="text"
-                name="city"
-                value={form.city}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                placeholder="e.g., Marikina City"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Province
-              </label>
-              <input
-                type="text"
-                name="province"
-                value={form.province}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                placeholder="e.g., Metro Manila"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
+            <input
+              type="text"
+              name="location"
+              value={form.location}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
+              placeholder="e.g., 123 Sports Ave, Marikina Sports Center"
+            />
           </div>
         </div>
 
@@ -365,48 +346,6 @@ export default function EditCourtPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Peak Hour Rate (₱)
-              </label>
-              <input
-                type="number"
-                name="peakHourRate"
-                value={form.peakHourRate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                placeholder="e.g., 700"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Half Court Rate (₱)
-              </label>
-              <input
-                type="number"
-                name="halfCourtRate"
-                value={form.halfCourtRate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                placeholder="e.g., 300"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Weekend Rate (₱)
-              </label>
-              <input
-                type="number"
-                name="weekendRate"
-                value={form.weekendRate}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                placeholder="e.g., 600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Downpayment % <span className="text-red-500">*</span>
               </label>
               <input
@@ -419,83 +358,6 @@ export default function EditCourtPage() {
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
               />
             </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Booking Settings</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Minimum Booking Hours
-              </label>
-              <input
-                type="number"
-                name="minBookingHours"
-                value={form.minBookingHours}
-                onChange={handleChange}
-                min="1"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Maximum Booking Hours
-              </label>
-              <input
-                type="number"
-                name="maxBookingHours"
-                value={form.maxBookingHours}
-                onChange={handleChange}
-                min="1"
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Amenities</h2>
-          
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              value={amenityInput}
-              onChange={(e) => setAmenityInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAmenity())}
-              className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-              placeholder="e.g., Shower rooms, Parking, Scoreboard..."
-            />
-            <button
-              type="button"
-              onClick={addAmenity}
-              className="px-4 py-2 bg-ph-blue text-white rounded-lg hover:bg-blue-700"
-            >
-              Add
-            </button>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {form.amenities.map((amenity) => (
-              <span
-                key={amenity}
-                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
-              >
-                {amenity}
-                <button
-                  type="button"
-                  onClick={() => removeAmenity(amenity)}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              </span>
-            ))}
-            {form.amenities.length === 0 && (
-              <p className="text-gray-500 text-sm">No amenities added yet</p>
-            )}
           </div>
         </div>
 

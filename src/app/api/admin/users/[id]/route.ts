@@ -80,15 +80,39 @@ export async function POST(
         break
 
       case 'delete':
-        // Delete user's related records first
-        await prisma.notification.deleteMany({ where: { userId: parseInt(params.id) } })
-        await prisma.review.deleteMany({ where: { userId: parseInt(params.id) } })
-        await prisma.payment.deleteMany({ where: { userId: parseInt(params.id) } })
-        await prisma.booking.deleteMany({ where: { userId: parseInt(params.id) } })
-        await prisma.activityLog.deleteMany({ where: { userId: parseInt(params.id) } })
+        const userId = parseInt(params.id)
         
-        await prisma.user.delete({
-          where: { id: parseInt(params.id) },
+        // Delete all related records in a transaction with proper order
+        await prisma.$transaction(async (tx) => {
+          // 1. Get all booking IDs for this user
+          const userBookings = await tx.booking.findMany({
+            where: { userId },
+            select: { id: true },
+          })
+          const bookingIds = userBookings.map((b) => b.id)
+
+          // 2. Delete payments linked to those bookings
+          if (bookingIds.length > 0) {
+            await tx.payment.deleteMany({ where: { bookingId: { in: bookingIds } } })
+          }
+
+          // 3. Delete notifications
+          await tx.notification.deleteMany({ where: { userId } })
+
+          // 4. Delete reviews
+          await tx.review.deleteMany({ where: { userId } })
+
+          // 5. Delete bookings
+          await tx.booking.deleteMany({ where: { userId } })
+
+          // 6. Delete activity logs
+          await tx.activityLog.deleteMany({ where: { userId } })
+
+          // 7. Delete password resets
+          await tx.passwordReset.deleteMany({ where: { email: user.email } })
+
+          // 8. Finally delete the user
+          await tx.user.delete({ where: { id: userId } })
         })
 
         return NextResponse.json({ message: 'User deleted successfully' })

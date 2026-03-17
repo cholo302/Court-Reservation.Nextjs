@@ -12,6 +12,7 @@ interface Booking {
   downpaymentAmount: number
   balanceAmount: number
   paymentType: string | null
+  expiresAt: string | null
   court: {
     name: string
   }
@@ -25,7 +26,27 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [proofPreview, setProofPreview] = useState<string | null>(null)
   const [referenceNumber, setReferenceNumber] = useState('')
-  const gcashPhone = process.env.NEXT_PUBLIC_GCASH_PHONE || '+63 993 163 ••••'
+  const [gcashPhone, setGcashPhone] = useState('')
+  const [gcashName, setGcashName] = useState('')
+  const [timeLeft, setTimeLeft] = useState<number | null>(null)
+  const [expired, setExpired] = useState(false)
+
+  useEffect(() => {
+    const fetchPaymentSettings = async () => {
+      try {
+        const res = await fetch('/api/settings/payment')
+        if (res.ok) {
+          const data = await res.json()
+          setGcashPhone(data.gcashNumber || '09123456789')
+          setGcashName(data.gcashName || 'Marikina Sports Center')
+        }
+      } catch {
+        setGcashPhone('09123456789')
+        setGcashName('Marikina Sports Center')
+      }
+    }
+    fetchPaymentSettings()
+  }, [])
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -51,6 +72,34 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
 
     fetchBooking()
   }, [params.id, router])
+
+  // Countdown timer for payment expiry
+  useEffect(() => {
+    if (!booking?.expiresAt) return
+
+    const expiryTime = new Date(booking.expiresAt).getTime()
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((expiryTime - Date.now()) / 1000))
+      setTimeLeft(remaining)
+      if (remaining <= 0) {
+        setExpired(true)
+        // Auto-cancel on the server
+        fetch(`/api/bookings/${params.id}?action=cancel`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'Payment not submitted within the allowed time' }),
+        }).then(() => {
+          toast.error('Booking cancelled — payment time expired')
+          router.push(`/bookings/${params.id}`)
+        })
+      }
+    }
+
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [booking?.expiresAt, params.id, router])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -154,9 +203,41 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
 
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Complete Payment</h1>
-        <p className="text-gray-600 mb-6">
+        <p className="text-gray-600 mb-4">
           Booking #{booking.bookingCode} - {booking.court.name}
         </p>
+
+        {/* Countdown Timer */}
+        {timeLeft !== null && (
+          <div className={`rounded-lg p-4 mb-6 flex items-center gap-3 ${
+            expired
+              ? 'bg-red-50 border border-red-200'
+              : timeLeft <= 300
+                ? 'bg-red-50 border border-red-200'
+                : 'bg-orange-50 border border-orange-200'
+          }`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              expired || timeLeft <= 300 ? 'bg-red-100' : 'bg-orange-100'
+            }`}>
+              <i className={`fas fa-clock ${expired || timeLeft <= 300 ? 'text-red-600' : 'text-orange-600'}`}></i>
+            </div>
+            <div className="flex-1">
+              {expired ? (
+                <>
+                  <p className="text-sm font-semibold text-red-700">Payment time expired</p>
+                  <p className="text-xs text-red-500">Your booking has been cancelled</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-gray-700">Time remaining to submit payment</p>
+                  <p className={`text-lg font-bold tabular-nums ${timeLeft <= 300 ? 'text-red-600' : 'text-orange-600'}`}>
+                    {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Amount */}
         <div className="bg-ph-blue/5 border border-ph-blue/20 rounded-lg p-6 mb-6 text-center">
@@ -191,6 +272,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
           <ol className="list-decimal list-inside text-sm text-gray-600 space-y-2">
             <li>Open your GCash app</li>
             <li>Scan the QR code below or send to: <strong>{gcashPhone}</strong></li>
+            <li>Account name: <strong>{gcashName}</strong></li>
             <li>Enter the exact amount: <strong>{formatPrice(booking.paymentType === 'venue' ? booking.downpaymentAmount : booking.totalAmount)}</strong></li>
             <li>Take a screenshot of the payment confirmation</li>
             <li>Upload the screenshot below and enter the reference number</li>
@@ -283,7 +365,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
 
           <button
             type="submit"
-            disabled={uploading || !proofFile || !referenceNumber.trim()}
+            disabled={uploading || !proofFile || !referenceNumber.trim() || expired}
             className="w-full bg-ph-blue text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {uploading ? (

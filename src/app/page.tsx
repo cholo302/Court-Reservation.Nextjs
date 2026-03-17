@@ -12,17 +12,10 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="grid md:grid-cols-2 gap-16 items-center">
               <div className="animate-slide-up">
-                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm text-blue-100 mb-6 border border-white/10">
-                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  Courts available now
-                </div>
                 <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight tracking-tight">
-                  Reserve Your
-                  <span className="block text-ph-yellow drop-shadow-sm">Perfect Court</span>
+                  OLOPSC
+                  <span className="block text-ph-yellow drop-shadow-sm">Court Reservation</span>
                 </h1>
-                <p className="text-lg md:text-xl text-blue-100 mb-10 max-w-lg leading-relaxed">
-                  Basketball, Volleyball, Badminton, and Ping Pong courts at Marikina Sports Center. Book online, pay with GCash.
-                </p>
 
                 <div className="flex flex-wrap gap-4">
                   <Link
@@ -54,37 +47,23 @@ export default function Home() {
               <div className="hidden md:block">
                 <div className="relative">
                   {/* Glow effect */}
-                  <div className="absolute -inset-4 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-3xl blur-2xl"></div>
-                  <div className="relative bg-white/[0.08] rounded-2xl p-8 backdrop-blur-sm border border-white/10">
+                  <div className="absolute -inset-4 bg-gradient-to-r from-blue-400/20 to-yellow-400/10 rounded-3xl blur-2xl"></div>
+                  <div className="relative bg-white/[0.08] backdrop-blur-sm rounded-2xl p-6 border border-white/10">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white rounded-2xl p-5 text-gray-800 card-hover cursor-default">
-                        <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-3">
-                          <i className="fas fa-basketball text-orange-500 text-xl"></i>
+                      {[
+                        { icon: 'fa-basketball', iconColor: 'text-orange-500', iconBg: 'bg-orange-100', label: 'Basketball', desc: 'Full & Half Courts' },
+                        { icon: 'fa-table-tennis-paddle-ball', iconColor: 'text-green-500', iconBg: 'bg-green-100', label: 'Ping Pong', desc: 'Indoor Tables' },
+                        { icon: 'fa-volleyball', iconColor: 'text-yellow-500', iconBg: 'bg-yellow-100', label: 'Volleyball', desc: 'Sand & Hard Courts' },
+                        { icon: 'fa-feather', iconColor: 'text-blue-400', iconBg: 'bg-blue-100', label: 'Badminton', desc: 'Indoor Courts' },
+                      ].map((sport) => (
+                        <div key={sport.label} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                          <div className={`w-12 h-12 ${sport.iconBg} rounded-xl flex items-center justify-center mb-4`}>
+                            <i className={`fas ${sport.icon} ${sport.iconColor} text-xl`}></i>
+                          </div>
+                          <p className="text-gray-900 font-bold text-base">{sport.label}</p>
+                          <p className="text-gray-400 text-sm mt-0.5">{sport.desc}</p>
                         </div>
-                        <h3 className="font-semibold text-gray-900">Basketball</h3>
-                        <p className="text-sm text-gray-500 mt-0.5">Full & Half Courts</p>
-                      </div>
-                      <div className="bg-white rounded-2xl p-5 text-gray-800 card-hover cursor-default">
-                        <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-3">
-                          <i className="fas fa-table-tennis-paddle-ball text-green-500 text-xl"></i>
-                        </div>
-                        <h3 className="font-semibold text-gray-900">Ping Pong</h3>
-                        <p className="text-sm text-gray-500 mt-0.5">Indoor Tables</p>
-                      </div>
-                      <div className="bg-white rounded-2xl p-5 text-gray-800 card-hover cursor-default">
-                        <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-3">
-                          <i className="fas fa-volleyball text-yellow-500 text-xl"></i>
-                        </div>
-                        <h3 className="font-semibold text-gray-900">Volleyball</h3>
-                        <p className="text-sm text-gray-500 mt-0.5">Sand & Hard Courts</p>
-                      </div>
-                      <div className="bg-white rounded-2xl p-5 text-gray-800 card-hover cursor-default">
-                        <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-3">
-                          <i className="fas fa-shuttlecock text-blue-500 text-xl"></i>
-                        </div>
-                        <h3 className="font-semibold text-gray-900">Badminton</h3>
-                        <p className="text-sm text-gray-500 mt-0.5">Indoor Courts</p>
-                      </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -131,7 +110,7 @@ export default function Home() {
 
         {/* CTA Section */}
         <section className="py-20 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-ph-blue via-blue-700 to-blue-900"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-[#1d3178] via-[#162560] to-[#0c153c]"></div>
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-10 left-10 w-40 h-40 border-2 border-white rounded-full"></div>
             <div className="absolute bottom-10 right-20 w-64 h-64 border-2 border-white rounded-full"></div>

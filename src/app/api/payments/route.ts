@@ -40,6 +40,8 @@ export async function GET(request: NextRequest) {
             id: true, 
             name: true, 
             email: true,
+            profileImage: true,
+            facePhoto: true,
           },
         },
       },
@@ -56,6 +58,7 @@ export async function GET(request: NextRequest) {
         courtName: p.booking?.court?.name,
         userName: p.user?.name,
         userEmail: p.user?.email,
+        userAvatar: p.user?.profileImage || p.user?.facePhoto || null,
         proofScreenshot: p.proofScreenshot,
         transactionId: p.transactionId,
       }))

@@ -17,6 +17,7 @@ interface Settings {
   gcashNumber: string
   gcashName: string
   maintenanceMode: boolean
+  adminAlerts: boolean
 }
 
 export default function SettingsPage() {
@@ -38,14 +39,24 @@ export default function SettingsPage() {
     gcashNumber: '09123456789',
     gcashName: 'Marikina Sports Center',
     maintenanceMode: false,
+    adminAlerts: true,
   })
 
   useEffect(() => {
-    // Simulate loading settings
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 500)
-    return () => clearTimeout(timer)
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/admin/settings')
+        if (res.ok) {
+          const data = await res.json()
+          setSettings(data.settings)
+        }
+      } catch (error) {
+        toast.error('Failed to load settings')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchSettings()
   }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -59,18 +70,30 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSave = async () => {
+  const saveSettings = async (data: Settings) => {
     setSaving(true)
-    
     try {
-      // In a real app, this would save to the database
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        console.error('Save failed:', res.status, errData)
+        throw new Error('Failed')
+      }
       toast.success('Settings saved successfully')
     } catch (error) {
+      console.error('Save error:', error)
       toast.error('Failed to save settings')
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleSave = async () => {
+    await saveSettings(settings)
   }
 
   const tabs = [
@@ -320,31 +343,17 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
-                      <p className="font-medium">Email Notifications</p>
-                      <p className="text-sm text-gray-500">Send booking confirmations via email</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-ph-blue peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium">SMS Notifications</p>
-                      <p className="text-sm text-gray-500">Send booking reminders via SMS</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-ph-blue peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
                       <p className="font-medium">Admin Alerts</p>
                       <p className="text-sm text-gray-500">Notify admins of new bookings</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
+                      <input
+                        type="checkbox"
+                        name="adminAlerts"
+                        checked={settings.adminAlerts}
+                        onChange={handleChange}
+                        className="sr-only peer"
+                      />
                       <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-ph-blue peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
                     </label>
                   </div>
@@ -395,13 +404,40 @@ export default function SettingsPage() {
                       </p>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => toast.error('This would clear all data')}
+                          onClick={async () => {
+                            if (!confirm('Are you sure you want to clear ALL booking data? This will delete all bookings, payments, notifications, and activity logs. This cannot be undone.')) return
+                            if (!confirm('This is your FINAL confirmation. All transactional data will be permanently deleted. Continue?')) return
+                            try {
+                              const res = await fetch('/api/admin/settings/danger', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action: 'clear-data' }),
+                              })
+                              if (!res.ok) throw new Error('Failed')
+                              toast.success('All booking data has been cleared')
+                            } catch {
+                              toast.error('Failed to clear data')
+                            }
+                          }}
                           className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
                         >
                           Clear All Data
                         </button>
                         <button
-                          onClick={() => toast.success('Cache cleared!')}
+                          onClick={async () => {
+                            if (!confirm('Clear expired bookings and old notifications?')) return
+                            try {
+                              const res = await fetch('/api/admin/settings/danger', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action: 'clear-cache' }),
+                              })
+                              if (!res.ok) throw new Error('Failed')
+                              toast.success('Stale data cleared successfully')
+                            } catch {
+                              toast.error('Failed to clear cache')
+                            }
+                          }}
                           className="border border-red-300 text-red-600 px-4 py-2 rounded-lg hover:bg-red-50 transition text-sm"
                         >
                           Clear Cache

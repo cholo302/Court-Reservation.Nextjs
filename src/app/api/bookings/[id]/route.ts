@@ -3,6 +3,12 @@ import prisma from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+// Helper to get a setting from DB with a default fallback
+async function getSetting(key: string, defaultValue: string): Promise<string> {
+  const row = await prisma.setting.findUnique({ where: { key } })
+  return row?.value ?? defaultValue
+}
+
 // GET /api/bookings/[id] - Get a single booking
 export async function GET(
   request: NextRequest,
@@ -38,6 +44,26 @@ export async function GET(
 
     if (!booking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+    }
+
+    // Auto-cancel expired bookings (confirmed + unpaid + past expiresAt)
+    if (
+      booking.status === 'confirmed' &&
+      booking.paymentStatus === 'unpaid' &&
+      booking.expiresAt &&
+      new Date(booking.expiresAt) < new Date()
+    ) {
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: {
+          status: 'cancelled',
+          cancelledAt: new Date(),
+          cancellationReason: 'Payment not submitted within the allowed time',
+        },
+      })
+      booking.status = 'cancelled'
+      booking.cancelledAt = new Date()
+      booking.cancellationReason = 'Payment not submitted within the allowed time'
     }
 
     // Check ownership (unless admin)
@@ -128,6 +154,19 @@ export async function POST(
         )
       }
 
+      // Enforce cancellation window (skip for admins)
+      if (session.user.role !== 'admin') {
+        const cancellationHours = parseInt(await getSetting('cancellationHours', '24'))
+        const bookingStart = new Date(`${booking.bookingDate.toISOString().split('T')[0]}T${booking.startTime}:00`)
+        const hoursUntilBooking = (bookingStart.getTime() - Date.now()) / (1000 * 60 * 60)
+        if (hoursUntilBooking < cancellationHours) {
+          return NextResponse.json(
+            { error: `Bookings cannot be cancelled within ${cancellationHours} hours of the start time` },
+            { status: 400 }
+          )
+        }
+      }
+
       const updatedBooking = await prisma.booking.update({
         where: { id: parseInt(params.id) },
         data: {
@@ -137,16 +176,16 @@ export async function POST(
         },
       })
 
-      // Log activity (commented out until migrations are run)
-      // await prisma.activityLog.create({
-      //   data: {
-      //     userId: parseInt(session.user.id),
-      //     action: 'booking_cancelled',
-      //     description: `Booking ${booking.bookingCode} was cancelled`,
-      //     entityType: 'booking',
-      //     entityId: booking.id,
-      //   },
-      // })
+      // Log activity
+      await prisma.activityLog.create({
+        data: {
+          userId: parseInt(session.user.id),
+          action: 'cancel_booking',
+          description: `Booking ${booking.bookingCode} was cancelled`,
+          entityType: 'booking',
+          entityId: booking.id,
+        },
+      })
 
       return NextResponse.json(updatedBooking)
     }

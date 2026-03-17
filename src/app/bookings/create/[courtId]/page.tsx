@@ -10,7 +10,6 @@ interface TimeSlot {
   start: string
   end: string
   available: boolean
-  isPeak: boolean
   rate: number
 }
 
@@ -18,7 +17,6 @@ interface Court {
   id: number
   name: string
   hourlyRate: number
-  peakHourRate: number | null
   halfCourtRate: number | null
   thumbnail: string | null
   courtType: {
@@ -35,9 +33,10 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
   const [slots, setSlots] = useState<TimeSlot[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [maxAdvanceDays, setMaxAdvanceDays] = useState(30)
 
   const today = new Date().toISOString().split('T')[0]
-  const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const maxDate = new Date(Date.now() + maxAdvanceDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
   const [formData, setFormData] = useState({
     bookingDate: today,
@@ -45,7 +44,6 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
     endTime: '',
     isHalfCourt: false,
     paymentType: 'online',
-    playerCount: 1,
   })
 
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([])
@@ -55,6 +53,16 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
     if (status === 'unauthenticated') {
       router.push('/login')
       return
+    }
+
+    // Redirect users who haven't submitted docs or were rejected
+    if (status === 'authenticated') {
+      const vs = session?.user?.verificationStatus
+      if (vs === 'none' || vs === 'rejected') {
+        toast.error(vs === 'rejected' ? 'Your ID was rejected. Please resubmit.' : 'Please verify your ID before booking a court')
+        router.push('/verify')
+        return
+      }
     }
 
     const fetchCourt = async () => {
@@ -71,7 +79,18 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
       }
     }
 
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch('/api/settings/booking')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.maxAdvanceBookingDays) setMaxAdvanceDays(data.maxAdvanceBookingDays)
+        }
+      } catch {}
+    }
+
     fetchCourt()
+    fetchSettings()
 
     // Check if there's booking data from the court detail page
     const storedData = sessionStorage.getItem('bookingData')
@@ -83,22 +102,27 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
       }
       sessionStorage.removeItem('bookingData')
     }
-  }, [params.courtId, status, router])
+  }, [params.courtId, status, router, session])
 
   useEffect(() => {
+    const abortController = new AbortController()
+
     const fetchSlots = async () => {
       try {
         const response = await fetch(
-          `/api/courts/${params.courtId}/slots?date=${formData.bookingDate}`
+          `/api/courts/${params.courtId}/slots?date=${formData.bookingDate}`,
+          { signal: abortController.signal }
         )
         const data = await response.json()
+        if (abortController.signal.aborted) return
         setSlots(data.slots || [])
         // Only clear selected slots if the date actually changed
         if (lastFetchedDate && lastFetchedDate !== formData.bookingDate) {
           setSelectedSlots([])
         }
         setLastFetchedDate(formData.bookingDate)
-      } catch (error) {
+      } catch (error: any) {
+        if (error?.name === 'AbortError') return
         console.error('Error fetching slots:', error)
       }
     }
@@ -106,6 +130,8 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
     if (params.courtId && formData.bookingDate) {
       fetchSlots()
     }
+
+    return () => abortController.abort()
   }, [params.courtId, formData.bookingDate])
 
   const handleSlotClick = (slot: TimeSlot) => {
@@ -130,7 +156,7 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
 
     let total = 0
     selectedSlots.forEach((slot) => {
-      const rate = slot.isPeak && court.peakHourRate ? court.peakHourRate : court.hourlyRate
+      const rate = court.hourlyRate
       total += formData.isHalfCourt && court.halfCourtRate ? court.halfCourtRate : rate
     })
     return total
@@ -178,7 +204,7 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
           endTime,
           isHalfCourt: formData.isHalfCourt,
           paymentType: formData.paymentType,
-          playerCount: formData.playerCount,
+
           totalAmount: calculateTotal(),
         }),
       })
@@ -232,7 +258,25 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
         </ol>
       </nav>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Book {court.name}</h1>
+      <div className="mb-6">
+        <p className="text-sm font-semibold uppercase tracking-widest text-ph-blue mb-1">Book</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 uppercase">{court.name}</h1>
+      </div>
+
+      {/* Pending Verification Banner */}
+      {session?.user?.verificationStatus === 'pending' && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <i className="fas fa-hourglass-half text-amber-600"></i>
+          </div>
+          <div>
+            <p className="font-semibold text-amber-900">ID Verification Pending</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              Your documents are under review. You&apos;ll be able to book courts once your ID is verified by an admin.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-3 gap-8">
         {/* Booking Form */}
@@ -278,16 +322,11 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
                         isSlotSelected(slot)
                           ? 'bg-ph-blue text-white ring-2 ring-ph-blue ring-offset-2'
                           : slot.available
-                          ? slot.isPeak
-                            ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800 border-2 border-transparent'
-                            : 'bg-green-100 hover:bg-green-200 text-green-800 border-2 border-transparent'
+                          ? 'bg-green-100 hover:bg-green-200 text-green-800 border-2 border-transparent'
                           : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       }`}
                   >
                     {formatTime(slot.start)}
-                    {slot.isPeak && !isSlotSelected(slot) && (
-                      <span className="block text-xs">Peak</span>
-                    )}
                   </button>
                 ))}
               </div>
@@ -323,23 +362,6 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
                 </label>
               </div>
             )}
-
-            {/* Player Count */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Number of Players
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="20"
-                value={formData.playerCount}
-                onChange={(e) =>
-                  setFormData({ ...formData, playerCount: parseInt(e.target.value) || 1 })
-                }
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-              />
-            </div>
 
             {/* Payment Type */}
             <div>
@@ -389,10 +411,14 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
 
             <button
               type="submit"
-              disabled={selectedSlots.length === 0 || submitting}
+              disabled={selectedSlots.length === 0 || submitting || session?.user?.verificationStatus === 'pending'}
               className="w-full bg-ph-blue text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              {submitting ? (
+              {session?.user?.verificationStatus === 'pending' ? (
+                <>
+                  <i className="fas fa-clock mr-2"></i>Waiting for ID Verification
+                </>
+              ) : submitting ? (
                 <>
                   <i className="fas fa-spinner fa-spin mr-2"></i>Processing...
                 </>
@@ -435,12 +461,7 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
                 <span className="text-gray-600">Rate per hour</span>
                 <span>{formatPrice(court.hourlyRate)}</span>
               </div>
-              {court.peakHourRate && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Peak hour rate</span>
-                  <span>{formatPrice(court.peakHourRate)}</span>
-                </div>
-              )}
+
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Hours selected</span>
                 <span>{selectedSlots.length}</span>

@@ -1,80 +1,77 @@
+'use client'
+
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+
+interface SiteInfo {
+  siteName: string
+  siteEmail: string
+  sitePhone: string
+  siteAddress: string
+}
+
+const DEFAULTS: SiteInfo = {
+  siteName: 'OLOPSC Court Reservation',
+  siteEmail: 'contact@olopsc.edu.ph',
+  sitePhone: '+63 912 345 6789',
+  siteAddress: 'Marikina City, Metro Manila',
+}
 
 export default function Footer() {
+  const [info, setInfo] = useState<SiteInfo>(DEFAULTS)
+
+  useEffect(() => {
+    fetch('/api/settings/site-info')
+      .then((r) => r.json())
+      .then((d) => setInfo(d))
+      .catch(() => {})
+  }, [])
+
   return (
-    <footer className="bg-gray-900 text-white mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-          <div>
-            <Link href="/" className="flex items-center gap-2 mb-4 group">
-              <div className="w-9 h-9 bg-gradient-to-br from-ph-yellow to-yellow-400 rounded-lg flex items-center justify-center">
-                <i className="fas fa-basketball text-ph-blue text-sm"></i>
-              </div>
-              <span className="text-xl font-extrabold tracking-tight">CourtReserve</span>
-            </Link>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Book sports courts at Marikina Sports Center. Basketball, Badminton, Volleyball, and Ping Pong.
-            </p>
+    <footer className="bg-gray-950 text-white mt-auto border-t border-gray-800">
+      {/* Main content */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+        {/* Logo + name */}
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 shadow-md bg-ph-yellow p-[3px]">
+            <img src="/olopsc.jpg" alt="Logo" className="w-full h-full object-cover rounded-full" />
           </div>
+          <span className="text-2xl font-extrabold tracking-tight">{info.siteName}</span>
+        </div>
+        <p className="text-gray-400 text-sm mb-8">
+          Book sports courts online — Basketball, Badminton, Volleyball &amp; Ping Pong.
+        </p>
 
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">Quick Links</h3>
-            <ul className="space-y-2.5">
-              <li>
-                <Link href="/profile" className="text-gray-300 hover:text-white transition text-sm">
-                  My Profile
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">Sports</h3>
-            <ul className="space-y-2.5">
-              <li>
-                <Link href="/courts?type=basketball" className="text-gray-300 hover:text-white transition text-sm flex items-center gap-2">
-                  <i className="fas fa-basketball text-orange-400 text-xs w-4"></i> Basketball
-                </Link>
-              </li>
-              <li>
-                <Link href="/courts?type=badminton" className="text-gray-300 hover:text-white transition text-sm flex items-center gap-2">
-                  <i className="fas fa-shuttlecock text-blue-400 text-xs w-4"></i> Badminton
-                </Link>
-              </li>
-              <li>
-                <Link href="/courts?type=volleyball" className="text-gray-300 hover:text-white transition text-sm flex items-center gap-2">
-                  <i className="fas fa-volleyball text-yellow-400 text-xs w-4"></i> Volleyball
-                </Link>
-              </li>
-              <li>
-                <Link href="/courts?type=pingpong" className="text-gray-300 hover:text-white transition text-sm flex items-center gap-2">
-                  <i className="fas fa-table-tennis-paddle-ball text-green-400 text-xs w-4"></i> Ping Pong
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">Payment</h3>
-            <div className="flex gap-2 mb-3">
-              <span className="bg-blue-500/20 text-blue-300 px-3 py-1.5 rounded-lg text-xs font-semibold">GCash</span>
-              <span className="bg-green-500/20 text-green-300 px-3 py-1.5 rounded-lg text-xs font-semibold">Maya</span>
-            </div>
-            <p className="text-gray-500 text-xs">Secure QR Ph payments accepted</p>
-          </div>
+        {/* Contact pills */}
+        <div className="flex flex-wrap justify-center gap-3 mb-10">
+          <a
+            href={`mailto:${info.siteEmail}`}
+            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 transition rounded-full px-4 py-2 text-sm text-gray-300 hover:text-white"
+          >
+            <i className="fas fa-envelope text-ph-yellow text-xs"></i>
+            {info.siteEmail}
+          </a>
+          <a
+            href={`tel:${info.sitePhone}`}
+            className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 transition rounded-full px-4 py-2 text-sm text-gray-300 hover:text-white"
+          >
+            <i className="fas fa-phone text-green-400 text-xs"></i>
+            {info.sitePhone}
+          </a>
+          <span className="flex items-center gap-2 bg-gray-800 rounded-full px-4 py-2 text-sm text-gray-300">
+            <i className="fas fa-location-dot text-yellow-400 text-xs"></i>
+            {info.siteAddress}
+          </span>
         </div>
 
-        <div className="border-t border-gray-800 mt-10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-500 text-sm">
-            &copy; {new Date().getFullYear()} CourtReserve. All rights reserved.
-          </p>
-          <div className="flex gap-6">
-            <Link href="/terms" className="text-gray-500 hover:text-gray-300 text-sm transition">
-              Terms
-            </Link>
-            <Link href="/privacy" className="text-gray-500 hover:text-gray-300 text-sm transition">
-              Privacy
-            </Link>
+        {/* Divider */}
+        <div className="border-t border-gray-800 pt-7 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+          <p>&copy; {new Date().getFullYear()} {info.siteName}. All rights reserved.</p>
+          <div className="flex items-center gap-3">
+            <span className="bg-blue-500/20 text-blue-300 px-2.5 py-1 rounded-md text-xs font-semibold">GCash</span>
+            <span className="text-gray-700">|</span>
+            <Link href="/terms" className="hover:text-gray-300 transition">Terms</Link>
+            <Link href="/privacy" className="hover:text-gray-300 transition">Privacy</Link>
           </div>
         </div>
       </div>

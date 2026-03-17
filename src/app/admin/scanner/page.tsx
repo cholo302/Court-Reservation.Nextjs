@@ -591,7 +591,9 @@ export default function QRScannerPage() {
   }
 
   const isDownpaymentBooking = result?.paymentType === 'venue'
-  const isBalancePending = isDownpaymentBooking && result?.paymentStatus !== 'paid'
+  const isUnpaid = result?.paymentStatus === 'unpaid'
+  const isProcessing = result?.paymentStatus === 'processing'
+  const isBalancePending = isDownpaymentBooking && result?.paymentStatus === 'downpayment'
   const isFullyPaid = result?.paymentStatus === 'paid'
   const canCheckIn = result && (result.status === 'paid' || result.status === 'confirmed') && isFullyPaid
 
@@ -925,7 +927,7 @@ export default function QRScannerPage() {
                   <span className="font-bold text-base text-gray-900">{formatPrice(result.totalAmount)}</span>
                 </div>
 
-                {isDownpaymentBooking ? (
+                {isDownpaymentBooking && !isUnpaid && !isProcessing ? (
                   <>
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-gray-500">Downpayment (50%)</span>
@@ -951,8 +953,10 @@ export default function QRScannerPage() {
                 ) : (
                   <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                     <span className="text-xs font-medium text-gray-600">Status</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(result.paymentStatus)}`}>
-                      {result.paymentStatus}
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                      isUnpaid ? 'bg-red-50 text-red-700' : isProcessing ? 'bg-yellow-50 text-yellow-700' : getStatusColor(result.paymentStatus)
+                    }`}>
+                      {isUnpaid ? 'Unpaid' : isProcessing ? 'Processing' : result.paymentStatus}
                     </span>
                   </div>
                 )}
@@ -963,7 +967,11 @@ export default function QRScannerPage() {
                 result.status === 'completed'
                   ? 'bg-blue-50 border border-blue-100'
                   : (result.status === 'paid' || result.status === 'confirmed')
-                  ? isBalancePending
+                  ? isUnpaid
+                    ? 'bg-red-50 border border-red-100'
+                    : isProcessing
+                    ? 'bg-yellow-50 border border-yellow-200'
+                    : isBalancePending
                     ? 'bg-orange-50 border border-orange-100'
                     : 'bg-green-50 border border-green-100'
                   : 'bg-red-50 border border-red-100'
@@ -973,7 +981,11 @@ export default function QRScannerPage() {
                     result.status === 'completed'
                       ? 'fa-check-double text-blue-600'
                       : (result.status === 'paid' || result.status === 'confirmed')
-                      ? isBalancePending
+                      ? isUnpaid
+                        ? 'fa-times-circle text-red-600'
+                        : isProcessing
+                        ? 'fa-clock text-yellow-600'
+                        : isBalancePending
                         ? 'fa-exclamation-triangle text-orange-600'
                         : 'fa-check-circle text-green-600'
                       : 'fa-times-circle text-red-600'
@@ -983,7 +995,11 @@ export default function QRScannerPage() {
                       {result.status === 'completed'
                         ? 'Already Checked In'
                         : (result.status === 'paid' || result.status === 'confirmed')
-                        ? isBalancePending
+                        ? isUnpaid
+                          ? 'Payment Not Made'
+                          : isProcessing
+                          ? 'Payment Under Review'
+                          : isBalancePending
                           ? 'Balance Payment Required'
                           : 'Ready for Check-in'
                         : 'Invalid - Do Not Allow Entry'}
@@ -992,7 +1008,11 @@ export default function QRScannerPage() {
                       {result.status === 'completed'
                         ? 'This booking has already been used'
                         : (result.status === 'paid' || result.status === 'confirmed')
-                        ? isBalancePending
+                        ? isUnpaid
+                          ? 'Customer has not paid yet. Do not allow entry.'
+                          : isProcessing
+                          ? 'Payment proof submitted but not yet verified by admin.'
+                          : isBalancePending
                           ? `Collect ${formatPrice(result.balanceAmount)} balance first`
                           : 'Customer may enter the facility'
                         : `Booking status: ${result.status}`}
@@ -1002,7 +1022,7 @@ export default function QRScannerPage() {
               </div>
 
               {/* Action Buttons */}
-              {(result.status === 'paid' || result.status === 'confirmed') && (
+              {(result.status === 'paid' || result.status === 'confirmed') && !isUnpaid && !isProcessing && (
                 <div className="space-y-2">
                   {isDownpaymentBooking && isBalancePending && (
                     <button

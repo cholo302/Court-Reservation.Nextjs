@@ -134,16 +134,33 @@ export async function POST(
         },
       })
 
-      // Log activity (commented out until migrations are run)
-      // await prisma.activityLog.create({
-      //   data: {
-      //     userId: parseInt(session.user.id),
-      //     action: 'payment_verified',
-      //     description: `Payment ${params.ref} verified`,
-      //     entityType: 'payment',
-      //     entityId: payment.id,
-      //   },
-      // })
+      // Log activity
+      await prisma.activityLog.create({
+        data: {
+          userId: parseInt(session.user.id),
+          action: 'payment_verified',
+          description: `Payment ${params.ref} verified`,
+          entityType: 'payment',
+          entityId: payment.id,
+        },
+      })
+
+      // Notify user that payment was verified
+      const verifiedBooking = await prisma.booking.findUnique({
+        where: { id: payment.bookingId },
+        include: { court: true },
+      })
+
+      await prisma.notification.create({
+        data: {
+          userId: payment.userId,
+          type: 'payment_verified',
+          title: 'Payment Verified',
+          message: `Your payment for ${verifiedBooking?.court?.name || 'your booking'} has been verified. ${isDownpayment ? 'Please pay the remaining balance at the venue.' : 'You\'re all set!'}`,
+          data: JSON.stringify({ bookingId: payment.bookingId }),
+          channel: 'web',
+        },
+      })
 
       return NextResponse.json({
         ...updatedPayment,
@@ -168,6 +185,23 @@ export async function POST(
           status: 'cancelled',
           cancelledAt: new Date(),
           cancellationReason: data.reason || 'Payment rejected',
+        },
+      })
+
+      // Notify user that payment was rejected
+      const rejectedBooking = await prisma.booking.findUnique({
+        where: { id: payment.bookingId },
+        include: { court: true },
+      })
+
+      await prisma.notification.create({
+        data: {
+          userId: payment.userId,
+          type: 'payment_rejected',
+          title: 'Payment Rejected',
+          message: `Your payment for ${rejectedBooking?.court?.name || 'your booking'} was rejected. ${data.reason ? `Reason: ${data.reason}` : 'Please contact support for more details.'}`,
+          data: JSON.stringify({ bookingId: payment.bookingId }),
+          channel: 'web',
         },
       })
 

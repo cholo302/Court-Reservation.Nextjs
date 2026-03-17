@@ -5,12 +5,12 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { Footer } from '@/components/layout'
 
 interface TimeSlot {
   start: string
   end: string
   available: boolean
-  isPeak: boolean
 }
 
 interface Court {
@@ -22,7 +22,6 @@ interface Court {
   city: string
   thumbnail: string | null
   hourlyRate: number
-  peakHourRate: number | null
   rating: number
   capacity: number | null
   amenities: string[]
@@ -115,14 +114,33 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
     })
   }
 
+  const isAdmin = session?.user?.role === 'admin'
+
   const isSlotSelected = (slot: TimeSlot) => {
     return selectedSlots.some((s) => s.start === slot.start)
   }
 
   const handleBookNow = () => {
+    if (isAdmin) {
+      toast.error('Admins cannot book courts. This is view-only mode.')
+      return
+    }
+
     if (!session) {
       toast.error('Please login to book a court')
       router.push('/login')
+      return
+    }
+
+    const vs = session.user?.verificationStatus
+    if (vs === 'none' || vs === 'rejected') {
+      toast.error(vs === 'rejected' ? 'Your ID was rejected. Please resubmit.' : 'Please verify your ID first')
+      router.push('/verify')
+      return
+    }
+
+    if (vs === 'pending') {
+      toast.error('Please wait for your ID to be verified')
       return
     }
 
@@ -169,29 +187,16 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Breadcrumb */}
-      <nav className="mb-6">
-        <ol className="flex items-center space-x-2 text-sm text-gray-500">
-          <li>
-            <Link href="/" className="hover:text-ph-blue">
-              Home
-            </Link>
-          </li>
-          <li>
-            <i className="fas fa-chevron-right text-xs"></i>
-          </li>
-          <li>
-            <Link href="/courts" className="hover:text-ph-blue">
-              Courts
-            </Link>
-          </li>
-          <li>
-            <i className="fas fa-chevron-right text-xs"></i>
-          </li>
-          <li className="text-gray-900">{court.name}</li>
-        </ol>
-      </nav>
+    <>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Back button */}
+      <button
+        onClick={() => router.back()}
+        className="inline-flex items-center gap-2 text-ph-blue hover:text-blue-700 font-medium mb-8 transition-colors"
+      >
+        <i className="fas fa-arrow-left"></i>
+        Back
+      </button>
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Main Content */}
@@ -220,49 +225,52 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
           </div>
 
           {/* Court Info */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">{court.name}</h1>
-
-            <div className="flex items-center text-gray-500 mb-4">
-              <i className="fas fa-map-marker-alt mr-2"></i>
-              <span>
-                {court.location}
-                {court.barangay && `, ${court.barangay}`}, {court.city}
-              </span>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {/* Name + location header strip */}
+            <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-extrabold text-gray-900 leading-tight">{court.name}</h1>
+                  {(court.location || court.city) && (
+                    <div className="flex items-start gap-1.5 mt-2 text-sm text-gray-500">
+                      <i className="fas fa-location-dot text-yellow-500 mt-0.5 shrink-0"></i>
+                      <span className="leading-snug">
+                        {[court.location, court.barangay, court.city].filter(Boolean).join(', ')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <span className="shrink-0 bg-blue-50 text-ph-blue text-xs font-semibold px-3 py-1.5 rounded-full border border-blue-100">
+                  {court.courtType?.name || 'Court'}
+                </span>
+              </div>
             </div>
 
+            {/* Description */}
             {court.description && (
-              <p className="text-gray-600 mb-6 whitespace-pre-line">{court.description}</p>
-            )}
-
-            {/* Amenities */}
-            {court.amenities && court.amenities.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3">Amenities</h3>
-                <div className="flex flex-wrap gap-3">
-                  {court.amenities.map((amenity) => (
-                    <span
-                      key={amenity}
-                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg"
-                    >
-                      <i
-                        className={`fas ${amenityIcons[amenity] || 'fa-check'} mr-2 text-ph-blue`}
-                      ></i>
-                      {amenity.charAt(0).toUpperCase() + amenity.slice(1)}
-                    </span>
-                  ))}
-                </div>
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">About</h3>
+                <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{court.description}</p>
               </div>
             )}
 
             {/* Rules */}
             {court.rules && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  <i className="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
-                  Court Rules
-                </h3>
-                <p className="text-gray-600 text-sm whitespace-pre-line">{court.rules}</p>
+              <div className="px-6 py-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                    <i className="fas fa-triangle-exclamation text-amber-500 text-xs"></i>
+                  </div>
+                  <h3 className="text-sm font-bold text-gray-800">Court Rules</h3>
+                </div>
+                <div className="space-y-2">
+                  {court.rules.split('\n').filter(line => line.trim()).map((line, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                      <span>{line.trim()}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -304,16 +312,11 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                         isSlotSelected(slot)
                           ? 'bg-ph-blue text-white ring-2 ring-ph-blue ring-offset-2'
                           : slot.available
-                          ? slot.isPeak
-                            ? 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800'
-                            : 'bg-green-100 hover:bg-green-200 text-green-800'
+                          ? 'bg-green-100 hover:bg-green-200 text-green-800'
                           : 'bg-red-100 text-red-400 cursor-not-allowed'
                       }`}
                   >
                     <div className="text-sm font-medium">{formatTime(slot.start)}</div>
-                    {slot.isPeak && !isSlotSelected(slot) && (
-                      <div className="text-xs">Peak</div>
-                    )}
                   </div>
                 ))
               ) : (
@@ -329,10 +332,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                 <span className="w-4 h-4 bg-green-100 rounded mr-2"></span> Available
               </span>
               <span className="flex items-center">
-                <span className="w-4 h-4 bg-yellow-100 rounded mr-2"></span> Peak Hour
-              </span>
-              <span className="flex items-center">
-                <span className="w-4 h-4 bg-red-100 rounded mr-2"></span> Booked
+                <span className="w-4 h-4 bg-red-100 rounded mr-2"></span> Not Available
               </span>
               <span className="flex items-center">
                 <span className="w-4 h-4 bg-ph-blue rounded mr-2"></span> Selected
@@ -351,16 +351,6 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
               <span className="text-gray-500">/hour</span>
             </div>
 
-            {court.peakHourRate && (
-              <p className="text-center text-sm text-gray-500 mb-4">
-                Peak hours:{' '}
-                <span className="font-semibold text-ph-yellow">
-                  {formatPrice(court.peakHourRate)}
-                </span>
-                /hour
-              </p>
-            )}
-
             {selectedSlots.length > 0 && (
               <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                 <h4 className="font-medium text-gray-900 mb-2">Selected Slots:</h4>
@@ -370,9 +360,6 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                       <span>
                         {formatTime(slot.start)} - {formatTime(slot.end)}
                       </span>
-                      {slot.isPeak && (
-                        <span className="text-ph-yellow text-xs">Peak</span>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -383,16 +370,58 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
               </div>
             )}
 
+            {/* Verification status messages */}
+            {session?.user?.verificationStatus === 'pending' && !isAdmin && (
+              <div className="mb-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <i className="fas fa-hourglass-half text-amber-500 mr-1.5"></i>
+                <span className="text-sm text-amber-700 font-medium">Waiting for ID verification</span>
+              </div>
+            )}
+            {session?.user?.verificationStatus === 'none' && !isAdmin && (
+              <div className="mb-3">
+                <Link
+                  href="/verify"
+                  className="block bg-amber-50 border border-amber-200 rounded-lg p-3 text-center hover:bg-amber-100 transition"
+                >
+                  <i className="fas fa-shield-halved text-amber-500 mr-1.5"></i>
+                  <span className="text-sm text-amber-700 font-medium">Verify your ID to book</span>
+                </Link>
+              </div>
+            )}
+            {session?.user?.verificationStatus === 'rejected' && !isAdmin && (
+              <div className="mb-3">
+                <Link
+                  href="/verify"
+                  className="block bg-red-50 border border-red-200 rounded-lg p-3 text-center hover:bg-red-100 transition"
+                >
+                  <i className="fas fa-triangle-exclamation text-red-500 mr-1.5"></i>
+                  <span className="text-sm text-red-700 font-medium">ID rejected — Resubmit</span>
+                </Link>
+              </div>
+            )}
+
+            {isAdmin ? (
+              <div className="w-full py-3 rounded-lg bg-gray-100 border border-gray-200 text-center text-sm text-gray-500 font-medium">
+                <i className="fas fa-eye mr-2"></i>Admin View Only — Booking disabled
+              </div>
+            ) : (
             <button
               onClick={handleBookNow}
-              disabled={selectedSlots.length === 0}
-              className="w-full bg-ph-blue text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={selectedSlots.length === 0 || session?.user?.verificationStatus === 'pending'}
+              className={`w-full py-3 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                session?.user?.verificationStatus === 'pending'
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-ph-blue text-white hover:bg-blue-800'
+              }`}
             >
-              <i className="fas fa-calendar-check mr-2"></i>
-              {selectedSlots.length > 0
+              <i className={`fas ${session?.user?.verificationStatus === 'pending' ? 'fa-clock' : 'fa-calendar-check'} mr-2`}></i>
+              {session?.user?.verificationStatus === 'pending'
+                ? 'Waiting for Verification'
+                : selectedSlots.length > 0
                 ? `Book ${selectedSlots.length} Hour${selectedSlots.length > 1 ? 's' : ''}`
                 : 'Select Time Slots'}
             </button>
+            )}
 
             {court.capacity && (
               <p className="text-center text-sm text-gray-500 mt-4">
@@ -404,5 +433,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
         </div>
       </div>
     </div>
+    <Footer />
+    </>
   )
 }

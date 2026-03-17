@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
@@ -58,24 +58,47 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
   const router = useRouter()
   const [booking, setBooking] = useState<Booking | null>(null)
   const [loading, setLoading] = useState(true)
+  const prevPaymentStatus = useRef<string | null>(null)
 
-  useEffect(() => {
-    const fetchBooking = async () => {
-      try {
-        const response = await fetch(`/api/bookings/${params.id}`)
-        if (!response.ok) throw new Error('Booking not found')
-        const data = await response.json()
-        setBooking(data.booking)
-      } catch (error) {
+  const fetchBooking = async (silent = false) => {
+    try {
+      const response = await fetch(`/api/bookings/${params.id}`)
+      if (!response.ok) throw new Error('Booking not found')
+      const data = await response.json()
+      const newStatus = data.booking?.payment?.status ?? null
+
+      if (silent) {
+        if (prevPaymentStatus.current === 'pending' && newStatus === 'downpayment') {
+          toast.success('Your payment has been approved! Your QR code is now available.')
+        } else if (prevPaymentStatus.current === 'pending' && newStatus === 'rejected') {
+          toast.error('Your payment was rejected. Please resubmit your proof.')
+        }
+      }
+
+      prevPaymentStatus.current = newStatus
+      setBooking(data.booking)
+    } catch (error) {
+      if (!silent) {
         toast.error('Booking not found')
         router.push('/bookings')
-      } finally {
-        setLoading(false)
       }
+    } finally {
+      if (!silent) setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchBooking()
-  }, [params.id, router])
+  }, [params.id])
+
+  // Poll every 10 seconds while payment is awaiting admin verification
+  useEffect(() => {
+    if (!booking) return
+    if (booking.payment?.status !== 'pending') return
+
+    const interval = setInterval(() => fetchBooking(true), 10000)
+    return () => clearInterval(interval)
+  }, [booking?.payment?.status])
 
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this booking?')) return

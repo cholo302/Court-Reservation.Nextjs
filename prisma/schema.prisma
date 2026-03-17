@@ -12,6 +12,9 @@ datasource db {
 model User {
   id              Int       @id @default(autoincrement())
   name            String
+  firstName       String    @default("") @map("first_name")
+  middleName      String?   @map("middle_name")
+  lastName        String    @default("") @map("last_name")
   email           String    @unique
   phone           String?   @unique
   password        String
@@ -21,12 +24,20 @@ model User {
   phoneVerifiedAt DateTime? @map("phone_verified_at")
   isBlacklisted   Boolean   @default(false) @map("is_blacklisted")
   blacklistReason String?   @map("blacklist_reason")
+  isIdInvalid     Boolean   @default(false) @map("is_id_invalid")
   isActive        Boolean   @default(true) @map("is_active")
+  isIdVerified    Boolean   @default(false) @map("is_id_verified")
   provider        String?
   providerId      String?   @map("provider_id")
   rememberToken   String?   @map("remember_token")
   govIdType       String?   @map("gov_id_type")
   govIdPhoto      String?   @map("gov_id_photo")
+  govIdNumber     String?   @map("gov_id_number")
+  govIdName       String?   @map("gov_id_name")
+  govIdBirthdate  String?   @map("gov_id_birthdate")
+  govIdExpiry     String?   @map("gov_id_expiry")
+  govIdAddress    String?   @map("gov_id_address")
+  govIdDetails    String?   @map("gov_id_details") // JSON extra details
   facePhoto       String?   @map("face_photo")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -228,4 +239,15 @@ model Setting {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("settings")
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  email     String
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("password_resets")
 }

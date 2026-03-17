@@ -147,8 +147,34 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    await prisma.court.delete({
-      where: { id: parseInt(params.id) },
+    const courtId = parseInt(params.id)
+
+    // Delete in dependency order to avoid foreign key constraint errors
+    await prisma.$transaction(async (tx) => {
+      // 1. Get all booking IDs for this court
+      const bookings = await tx.booking.findMany({
+        where: { courtId },
+        select: { id: true },
+      })
+      const bookingIds = bookings.map((b) => b.id)
+
+      // 2. Delete payments linked to those bookings
+      if (bookingIds.length > 0) {
+        await tx.payment.deleteMany({ where: { bookingId: { in: bookingIds } } })
+        // 3. Delete reviews linked to those bookings
+        await tx.review.deleteMany({ where: { bookingId: { in: bookingIds } } })
+        // 4. Delete the bookings
+        await tx.booking.deleteMany({ where: { courtId } })
+      }
+
+      // 5. Delete court schedules
+      await tx.courtSchedule.deleteMany({ where: { courtId } })
+
+      // 6. Delete direct court reviews (if any without bookingId)
+      await tx.review.deleteMany({ where: { courtId } })
+
+      // 7. Finally delete the court
+      await tx.court.delete({ where: { id: courtId } })
     })
 
     return NextResponse.json({ message: 'Court deleted successfully' })

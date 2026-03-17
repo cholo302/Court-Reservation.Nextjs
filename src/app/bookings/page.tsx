@@ -3,7 +3,9 @@
 import Link from 'next/link'
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
+import { Footer } from '@/components/layout'
 
 interface Booking {
   id: number
@@ -40,20 +42,25 @@ const statusConfig: Record<string, { bg: string; text: string; icon: string }> =
 
 export default function BookingsPageWrapper() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center py-20">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
-      </div>
-    }>
-      <BookingsPage />
-    </Suspense>
+    <>
+      <Suspense fallback={
+        <div className="flex items-center justify-center py-20">
+          <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        </div>
+      }>
+        <BookingsPage />
+      </Suspense>
+      <Footer />
+    </>
   )
 }
 
 function BookingsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { data: session } = useSession()
   const currentStatus = searchParams.get('status') || ''
+  const isAdmin = session?.user?.role === 'admin'
 
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
@@ -126,6 +133,8 @@ function BookingsPage() {
   const statuses = [
     { value: '', label: 'All' },
     { value: 'pending', label: 'Pending', color: 'bg-yellow-500' },
+    { value: 'confirmed', label: 'Confirmed', color: 'bg-blue-500' },
+    { value: 'downpayment', label: 'Downpayment', color: 'bg-orange-500' },
     { value: 'paid', label: 'Paid', color: 'bg-green-500' },
     { value: 'completed', label: 'Completed', color: 'bg-green-600' },
     { value: 'cancelled', label: 'Cancelled', color: 'bg-red-500' },
@@ -133,11 +142,31 @@ function BookingsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Back Button */}
+      <Link
+        href="/"
+        className="inline-flex items-center gap-2 text-ph-blue hover:text-blue-700 font-medium mb-8 transition-colors"
+      >
+        <i className="fas fa-arrow-left"></i>
+        Back to Dashboard
+      </Link>
+
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
         <p className="text-gray-600 mt-2">View and manage your court reservations</p>
       </div>
+
+      {isAdmin ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <i className="fas fa-calendar-xmark text-2xl text-gray-400"></i>
+          </div>
+          <h2 className="text-lg font-semibold text-gray-600 mb-1">No bookings</h2>
+          <p className="text-gray-400 text-sm">You have no bookings as an admin.</p>
+        </div>
+      ) : (
+      <>
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
@@ -310,7 +339,7 @@ function BookingsPage() {
                         </>
                       )}
 
-                      {['paid', 'confirmed'].includes(booking.status) && (
+                      {['paid', 'confirmed'].includes(booking.status) && (booking.payment?.status === 'downpayment' || booking.payment?.status === 'paid') && (
                         <Link
                           href={`/bookings/${booking.id}/qr`}
                           className="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition"
@@ -327,6 +356,8 @@ function BookingsPage() {
             )
           })}
         </div>
+      )}
+      </>
       )}
     </div>
   )
