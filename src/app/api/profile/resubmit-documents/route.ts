@@ -66,7 +66,6 @@ export async function POST(req: NextRequest) {
         type: 'id_resubmitted',
         title: 'Documents Resubmitted',
         message: 'Your documents have been resubmitted and are pending review.',
-        isRead: false,
       },
     })
 
@@ -76,11 +75,6 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         action: 'resubmit_documents',
         description: `User resubmitted government ID (${govIdType}) and selfie photo`,
-        metadata: {
-          govIdType,
-          govIdPhoto: govIdFileName,
-          facePhoto: faceFileName,
-        },
       },
     })
 
