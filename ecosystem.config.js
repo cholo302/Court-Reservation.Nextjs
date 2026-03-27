@@ -9,6 +9,13 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '512M',
+      // Prevent crash-loop: stop restarting after 10 failures within 60s
+      max_restarts: 10,
+      min_uptime: '10s',
+      restart_delay: 5000,
+      // Kill the old process on port before starting
+      kill_timeout: 5000,
+      wait_ready: false,
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
