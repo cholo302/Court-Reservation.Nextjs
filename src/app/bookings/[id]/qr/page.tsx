@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import BouncingBallLoader from '@/components/ui/BouncingBallLoader'
 import QRCode from 'qrcode'
 
 interface BookingDetails {
@@ -146,7 +147,7 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }

@@ -5,6 +5,7 @@ import { useState, Suspense, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 function LoginForm() {
   const router = useRouter()
@@ -189,7 +190,7 @@ function LoginForm() {
             >
               {isLoading ? (
                 <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i> Signing in...
+                  <BallSpinner className="mr-2" /> Signing in...
                 </>
               ) : (
                 <>
@@ -213,9 +214,9 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
+      <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-ph-blue to-blue-800">
-        <i className="fas fa-spinner fa-spin text-4xl text-white"></i>
+        <BallSpinner className="text-white" />
       </div>
     }>
       <LoginForm />

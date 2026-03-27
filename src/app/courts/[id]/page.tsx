@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import BouncingBallLoader, { BallSpinner } from '@/components/ui/BouncingBallLoader'
 import toast from 'react-hot-toast'
 import { Footer } from '@/components/layout'
 
@@ -177,7 +178,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }
@@ -321,8 +322,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                 ))
               ) : (
                 <div className="col-span-full text-center text-gray-500 py-8">
-                  <i className="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                  <p>Loading slots...</p>
+                  <BouncingBallLoader size={60} text="Loading slots..." />
                 </div>
               )}
             </div>

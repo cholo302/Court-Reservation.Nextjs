@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import BouncingBallLoader, { BallSpinner } from '@/components/ui/BouncingBallLoader'
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
 
@@ -227,7 +228,7 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }
@@ -420,7 +421,7 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
                 </>
               ) : submitting ? (
                 <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i>Processing...
+                  <BallSpinner className="mr-2" />Processing...
                 </>
               ) : (
                 <>

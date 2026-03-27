@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import BouncingBallLoader from '@/components/ui/BouncingBallLoader'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
@@ -89,7 +90,7 @@ export default function AdminCourtsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }

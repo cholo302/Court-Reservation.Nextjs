@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import BouncingBallLoader, { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 interface CourtType {
   id: number
@@ -169,7 +170,7 @@ export default function EditCourtPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }
@@ -259,7 +260,7 @@ export default function EditCourtPage() {
               <label className="flex items-center gap-2 cursor-pointer w-fit mb-2">
                 <span className="px-3 py-1.5 bg-ph-blue text-white text-sm rounded-lg hover:bg-blue-700 transition flex items-center gap-1.5">
                   {thumbnailUploading ? (
-                    <><i className="fas fa-spinner fa-spin"></i> Uploading...</>
+                    <><BallSpinner /> Uploading...</>
                   ) : (
                     <><i className="fas fa-upload"></i> Upload Photo</>
                   )}
@@ -382,7 +383,7 @@ export default function EditCourtPage() {
           >
             {saving ? (
               <>
-                <i className="fas fa-spinner fa-spin"></i>
+                <BallSpinner />
                 Saving...
               </>
             ) : (

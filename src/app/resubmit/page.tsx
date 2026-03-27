@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 export default function ResubmitPage() {
   const [step, setStep] = useState<'email' | 'upload'>('email')
@@ -135,7 +136,7 @@ export default function ResubmitPage() {
               >
                 {isLoading ? (
                   <>
-                    <i className="fas fa-spinner fa-spin mr-2"></i> Verifying...
+                    <BallSpinner className="mr-2" /> Verifying...
                   </>
                 ) : (
                   <>
@@ -226,7 +227,7 @@ export default function ResubmitPage() {
                 >
                   {isLoading ? (
                     <>
-                      <i className="fas fa-spinner fa-spin mr-2"></i> Uploading...
+                      <BallSpinner className="mr-2" /> Uploading...
                     </>
                   ) : (
                     <>

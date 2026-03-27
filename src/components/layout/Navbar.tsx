@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 interface Notification {
   id: number
@@ -218,7 +219,7 @@ export default function Navbar() {
                       <div className="max-h-[400px] overflow-y-auto divide-y divide-gray-50">
                         {notifLoading ? (
                           <div className="py-12 text-center">
-                            <i className="fas fa-spinner fa-spin text-2xl text-gray-300"></i>
+                            <BallSpinner className="text-gray-300" />
                           </div>
                         ) : notifications.length === 0 ? (
                           <div className="py-12 text-center">

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
+import BouncingBallLoader from '@/components/ui/BouncingBallLoader'
 
 interface Booking {
   id: number
@@ -93,7 +94,7 @@ function BookingsContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <i className="fas fa-spinner fa-spin text-3xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }
@@ -253,7 +254,7 @@ function BookingsContent() {
 
 export default function AdminBookingsPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20"><i className="fas fa-spinner fa-spin text-3xl text-ph-blue"></i></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><BouncingBallLoader /></div>}>
       <BookingsContent />
     </Suspense>
   )

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import BouncingBallLoader from '@/components/ui/BouncingBallLoader'
 import { Footer } from '@/components/layout'
 
 interface Court {
@@ -114,8 +115,7 @@ function CourtsContent() {
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <i className="fas fa-spinner fa-spin text-4xl text-ph-blue mb-4"></i>
-          <p className="text-gray-400 text-sm">Loading courts...</p>
+          <BouncingBallLoader text="Loading courts..." />
         </div>
       ) : filteredCourts.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-16 text-center">
@@ -203,7 +203,7 @@ export default function CourtsPage() {
     <>
       <Suspense fallback={
         <div className="flex items-center justify-center py-20">
-          <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+          <BouncingBallLoader />
         </div>
       }>
         <CourtsContent />

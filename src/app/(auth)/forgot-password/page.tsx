@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
@@ -91,7 +92,7 @@ export default function ForgotPasswordPage() {
             >
               {isLoading ? (
                 <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i> Sending...
+                  <BallSpinner className="mr-2" /> Sending...
                 </>
               ) : (
                 <>

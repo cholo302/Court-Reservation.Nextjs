@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import BouncingBallLoader, { BallSpinner } from '@/components/ui/BouncingBallLoader'
 import toast from 'react-hot-toast'
 import { Footer } from '@/components/layout'
 
@@ -178,7 +179,7 @@ export default function ProfilePage() {
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }
@@ -371,7 +372,7 @@ export default function ProfilePage() {
                 className="bg-ph-blue text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
               >
                 {saving ? (
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  <BallSpinner className="mr-2" />
                 ) : (
                   <i className="fas fa-save mr-2"></i>
                 )}
@@ -445,7 +446,7 @@ export default function ProfilePage() {
                 className="mt-4 bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition disabled:opacity-50"
               >
                 {saving ? (
-                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  <BallSpinner className="mr-2" />
                 ) : (
                   <i className="fas fa-key mr-2"></i>
                 )}

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import BouncingBallLoader from '@/components/ui/BouncingBallLoader'
 
 interface BookingDetail {
   id: number
@@ -111,7 +112,7 @@ export default function BookingDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <i className="fas fa-spinner fa-spin text-3xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }

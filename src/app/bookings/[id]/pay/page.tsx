@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import BouncingBallLoader, { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 interface Booking {
   id: number
@@ -161,7 +162,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }
@@ -370,7 +371,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
           >
             {uploading ? (
               <>
-                <i className="fas fa-spinner fa-spin mr-2"></i>Uploading...
+                <BallSpinner className="mr-2" />Uploading...
               </>
             ) : (
               <>

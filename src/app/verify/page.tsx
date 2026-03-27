@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { BallSpinner } from '@/components/ui/BouncingBallLoader'
 import toast from 'react-hot-toast'
 import CameraCapture from '@/components/ui/CameraCapture'
 
@@ -327,7 +328,7 @@ export default function VerifyPage() {
             >
               {isLoading ? (
                 <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i> Submitting...
+                  <BallSpinner className="mr-2" /> Submitting...
                 </>
               ) : (
                 <>

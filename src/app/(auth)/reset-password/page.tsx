@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 function ResetPasswordForm() {
   const router = useRouter()
@@ -188,7 +189,7 @@ function ResetPasswordForm() {
             >
               {isLoading ? (
                 <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i> Resetting...
+                  <BallSpinner className="mr-2" /> Resetting...
                 </>
               ) : (
                 <>
@@ -214,7 +215,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-ph-blue to-blue-800">
-        <i className="fas fa-spinner fa-spin text-white text-2xl"></i>
+        <BallSpinner className="text-white" />
       </div>
     }>
       <ResetPasswordForm />

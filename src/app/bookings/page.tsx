@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import toast from 'react-hot-toast'
 import { Footer } from '@/components/layout'
+import BouncingBallLoader from '@/components/ui/BouncingBallLoader'
 
 interface Booking {
   id: number
@@ -45,7 +46,7 @@ export default function BookingsPageWrapper() {
     <>
       <Suspense fallback={
         <div className="flex items-center justify-center py-20">
-          <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+          <BouncingBallLoader />
         </div>
       }>
         <BookingsPage />
@@ -193,7 +194,7 @@ function BookingsPage() {
       {/* Bookings List */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+          <BouncingBallLoader />
         </div>
       ) : bookings.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import jsQR from 'jsqr'
+import BouncingBallLoader, { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 type InputMode = 'camera' | 'upload' | 'manual'
 
@@ -776,8 +777,7 @@ export default function QRScannerPage() {
                     </div>
                     {uploadDecoding && (
                       <div className="absolute inset-0 bg-white/70 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center">
-                        <i className="fas fa-spinner fa-spin text-ph-blue text-2xl mb-2"></i>
-                        <p className="text-sm font-medium text-gray-700">Decoding QR code...</p>
+                        <BouncingBallLoader size={60} text="Decoding QR code..." />
                       </div>
                     )}
                   </div>
@@ -853,7 +853,7 @@ export default function QRScannerPage() {
                       className="w-full bg-ph-blue text-white py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {loading ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <BallSpinner />
                       ) : (
                         <i className="fas fa-search text-xs"></i>
                       )}
@@ -882,8 +882,7 @@ export default function QRScannerPage() {
 
           {loading ? (
             <div className="h-64 flex flex-col items-center justify-center">
-              <i className="fas fa-spinner fa-spin text-ph-blue text-3xl mb-3"></i>
-              <p className="text-sm text-gray-500 font-medium">Looking up booking...</p>
+              <BouncingBallLoader size={60} text="Looking up booking..." />
             </div>
           ) : result ? (
             <div className="space-y-4">
@@ -1031,7 +1030,7 @@ export default function QRScannerPage() {
                       className="w-full bg-orange-500 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-orange-600 transition flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {confirmingPayment ? (
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <BallSpinner />
                       ) : (
                         <i className="fas fa-hand-holding-usd"></i>
                       )}
@@ -1049,7 +1048,7 @@ export default function QRScannerPage() {
                     }`}
                   >
                     {checkingIn ? (
-                      <i className="fas fa-spinner fa-spin"></i>
+                      <BallSpinner />
                     ) : (
                       <i className="fas fa-check-double"></i>
                     )}

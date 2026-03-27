@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
+import BouncingBallLoader, { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 interface Settings {
   siteName: string
@@ -107,7 +108,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }
@@ -458,7 +459,7 @@ export default function SettingsPage() {
               >
                 {saving ? (
                   <>
-                    <i className="fas fa-spinner fa-spin"></i>
+                    <BallSpinner />
                     Saving...
                   </>
                 ) : (

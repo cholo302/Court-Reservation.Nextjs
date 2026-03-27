@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import BouncingBallLoader from '@/components/ui/BouncingBallLoader'
 import toast from 'react-hot-toast'
 
 interface User {
@@ -136,7 +137,7 @@ function UsersContent() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <i className="fas fa-spinner fa-spin text-4xl text-ph-blue"></i>
+        <BouncingBallLoader />
       </div>
     )
   }
@@ -473,7 +474,7 @@ function UsersContent() {
 
 export default function AdminUsersPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-20"><i className="fas fa-spinner fa-spin text-3xl text-ph-blue"></i></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><BouncingBallLoader /></div>}>
       <UsersContent />
     </Suspense>
   )

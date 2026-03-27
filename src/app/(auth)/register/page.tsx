@@ -1,14 +1,28 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 export default function RegisterPage() {
   const router = useRouter()
   
+  const genCaptcha = () => {
+    const a = Math.floor(Math.random() * 9) + 1
+    const b = Math.floor(Math.random() * 9) + 1
+    return { a, b, answer: String(a + b) }
+  }
+
   const [isLoading, setIsLoading] = useState(false)
+  const [captcha, setCaptcha] = useState({ a: 0, b: 0, answer: '' })
+  const [captchaInput, setCaptchaInput] = useState('')
+
+  // Generate captcha only on client to avoid hydration mismatch
+  useEffect(() => {
+    setCaptcha(genCaptcha())
+  }, [])
   const [formData, setFormData] = useState({
     firstName: '',
     middleName: '',
@@ -128,6 +142,13 @@ export default function RegisterPage() {
     e.preventDefault()
     if (!validateAll()) return
 
+    if (captchaInput.trim() !== captcha.answer) {
+      toast.error('Incorrect answer. Please try again.')
+      setCaptcha(genCaptcha())
+      setCaptchaInput('')
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -159,6 +180,8 @@ export default function RegisterPage() {
       router.push('/login')
     } catch (error: any) {
       toast.error(error.message || 'An error occurred. Please try again.')
+      setCaptcha(genCaptcha())
+      setCaptchaInput('')
     } finally {
       setIsLoading(false)
     }
@@ -352,14 +375,41 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <p className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-1.5">
+                <i className="fas fa-shield-alt text-ph-blue text-xs"></i> Verify you&apos;re human
+              </p>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-lg font-bold text-gray-800 bg-white border border-gray-200 rounded-lg px-4 py-2 select-none tracking-widest">
+                  {captcha.a > 0 ? `${captcha.a} + ${captcha.b} = ?` : '...'}
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={captchaInput}
+                  onChange={(e) => setCaptchaInput(e.target.value)}
+                  placeholder="?"
+                  className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent text-center font-bold text-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setCaptcha(genCaptcha()); setCaptchaInput('') }}
+                  className="text-gray-400 hover:text-ph-blue transition p-1"
+                  title="New question"
+                >
+                  <i className="fas fa-rotate-right"></i>
+                </button>
+              </div>
+            </div>
+
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || captchaInput.trim() === ''}
               className="w-full bg-gradient-to-r from-ph-blue to-blue-600 text-white py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
             >
               {isLoading ? (
                 <>
-                  <i className="fas fa-spinner fa-spin mr-2"></i> Creating Account...
+                  <BallSpinner className="mr-2" /> Creating Account...
                 </>
               ) : (
                 <>
