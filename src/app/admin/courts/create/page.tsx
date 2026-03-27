@@ -134,7 +134,7 @@ export default function CreateCourtPage() {
   }
 
   return (
-    <div>
+    <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <Link href="/admin/courts" className="text-ph-blue hover:underline mb-4 inline-block">
           <i className="fas fa-arrow-left mr-2"></i>
@@ -144,7 +144,7 @@ export default function CreateCourtPage() {
         <p className="text-gray-600">Add a new court facility to the system</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-4xl">
+      <form onSubmit={handleSubmit}>
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
           

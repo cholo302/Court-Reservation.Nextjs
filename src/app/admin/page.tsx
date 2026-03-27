@@ -555,49 +555,6 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Quick Actions */}
-      <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Link
-          href="/admin/scanner"
-          className="bg-white border border-gray-100 rounded-xl p-4 hover:border-ph-blue/30 hover:bg-blue-50/30 transition group text-center"
-        >
-          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-2.5 group-hover:bg-blue-100 transition">
-            <i className="fas fa-qrcode text-ph-blue text-sm"></i>
-          </div>
-          <p className="text-sm font-semibold text-gray-900">Scan QR</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">Check-in customers</p>
-        </Link>
-        <Link
-          href="/admin/bookings"
-          className="bg-white border border-gray-100 rounded-xl p-4 hover:border-emerald-200 hover:bg-emerald-50/30 transition group text-center"
-        >
-          <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center mx-auto mb-2.5 group-hover:bg-emerald-100 transition">
-            <i className="fas fa-calendar-alt text-emerald-600 text-sm"></i>
-          </div>
-          <p className="text-sm font-semibold text-gray-900">Bookings</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">Manage reservations</p>
-        </Link>
-        <Link
-          href="/admin/payments"
-          className="bg-white border border-gray-100 rounded-xl p-4 hover:border-orange-200 hover:bg-orange-50/30 transition group text-center"
-        >
-          <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center mx-auto mb-2.5 group-hover:bg-orange-100 transition">
-            <i className="fas fa-credit-card text-orange-600 text-sm"></i>
-          </div>
-          <p className="text-sm font-semibold text-gray-900">Payments</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">Verify & manage</p>
-        </Link>
-        <Link
-          href="/admin/reports"
-          className="bg-white border border-gray-100 rounded-xl p-4 hover:border-purple-200 hover:bg-purple-50/30 transition group text-center"
-        >
-          <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center mx-auto mb-2.5 group-hover:bg-purple-100 transition">
-            <i className="fas fa-chart-pie text-purple-600 text-sm"></i>
-          </div>
-          <p className="text-sm font-semibold text-gray-900">Reports</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">Analytics & data</p>
-        </Link>
-      </div>
     </div>
   )
 }
