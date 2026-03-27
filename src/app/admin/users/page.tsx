@@ -413,7 +413,7 @@ function UsersContent() {
               <div className="bg-blue-50 border-b border-blue-200 p-3 flex items-center gap-2">
                 <i className="fas fa-info-circle text-blue-600"></i>
                 <p className="text-sm text-blue-800">
-                  <span className="font-semibold">Recently Resubmitted:</span> {formatDate(viewingID.updatedAt)}
+                  <span className="font-semibold">Recently Resubmitted:</span> {formatDate(viewingID.updatedAt ?? '')}
                 </p>
               </div>
             )}
