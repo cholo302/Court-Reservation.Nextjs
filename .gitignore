@@ -46,14 +46,5 @@ next-env.d.ts
 prisma/*.sqlite
 prisma/*.sqlite-journal
 
-# uploaded user content (generated at runtime)
-public/uploads/proofs/*
-public/uploads/users/*
-public/uploads/qrcodes/*
-!public/uploads/qrcodes/gcash-qr.jpg
-!public/uploads/proofs/.gitkeep
-!public/uploads/users/.gitkeep
-!public/uploads/qrcodes/.gitkeep
-
 # platform-specific SWC binaries (auto-installed by npm)
 @next/swc-*
