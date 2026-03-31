@@ -31,8 +31,6 @@ export async function POST(request: NextRequest) {
     const govIdExpiry = formData.get('govIdExpiry') as string || null
     const govIdAddress = formData.get('govIdAddress') as string || null
 
-    console.log('Resubmit request:', { email, govIdType, govIdPhotoSize: govIdPhoto?.size, facePhotoSize: facePhoto?.size })
-
     // Validate required fields
     if (!email || !govIdType || !govIdPhoto || !facePhoto) {
       return NextResponse.json(

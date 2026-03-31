@@ -220,7 +220,7 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
           endTime,
           isHalfCourt: formData.isHalfCourt,
           paymentType: formData.paymentType,
-
+          selectedSlots: sortedSlots.map(s => parseInt(s.start.split(':')[0])),
           totalAmount: calculateTotal(),
         }),
       })

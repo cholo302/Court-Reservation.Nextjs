@@ -206,14 +206,23 @@ export async function POST(request: NextRequest) {
 
     // Validate contiguous time slots
     if (reqEndHour - reqStartHour > 1) {
-      // For multi-hour bookings, verify they selected all intermediate hours
-      // by checking that the client sent the expected contiguous block
-      const selectedHours = data.selectedSlots || []
-      if (selectedHours.length > 0 && selectedHours.length !== (reqEndHour - reqStartHour)) {
-        return NextResponse.json(
-          { error: 'Please select contiguous (adjacent) time slots only' },
-          { status: 400 }
-        )
+      const selectedHours: number[] = data.selectedSlots || []
+      if (selectedHours.length > 0) {
+        if (selectedHours.length !== (reqEndHour - reqStartHour)) {
+          return NextResponse.json(
+            { error: 'Please select contiguous (adjacent) time slots only' },
+            { status: 400 }
+          )
+        }
+        const sorted = [...selectedHours].sort((a, b) => a - b)
+        for (let i = 1; i < sorted.length; i++) {
+          if (sorted[i] !== sorted[i - 1] + 1) {
+            return NextResponse.json(
+              { error: 'Please select contiguous (adjacent) time slots only' },
+              { status: 400 }
+            )
+          }
+        }
       }
     }
 

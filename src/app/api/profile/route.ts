@@ -11,7 +11,6 @@ export async function GET(req: NextRequest) {
   
   if (userEmail) {
     try {
-      console.log('Profile API: Fetching user by email:', userEmail)
       const user = await prisma.user.findUnique({
         where: { email: userEmail },
         select: {
@@ -24,7 +23,6 @@ export async function GET(req: NextRequest) {
       })
 
       if (!user) {
-        console.log('Profile API: User not found for email:', userEmail)
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
 
