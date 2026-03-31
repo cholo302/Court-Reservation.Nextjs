@@ -3,8 +3,10 @@ const { execSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 
+const PROJECT_ROOT = __dirname
+
 // Load .env file into process.env
-const envPath = path.join(__dirname, '.env')
+const envPath = path.join(PROJECT_ROOT, '.env')
 if (fs.existsSync(envPath)) {
   const content = fs.readFileSync(envPath, 'utf8')
   for (const line of content.split('\n')) {
@@ -24,6 +26,29 @@ if (fs.existsSync(envPath)) {
 } else {
   console.error('❌ No .env file found at', envPath)
   console.error('   Run: cp .env.production.example .env && nano .env')
+}
+
+// Resolve relative DATABASE_URL to absolute path
+// Prisma resolves SQLite relative paths from prisma/schema.prisma directory
+// so "file:./court_reservation.sqlite" => <project>/prisma/court_reservation.sqlite
+if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('file:./')) {
+  const relPath = process.env.DATABASE_URL.replace('file:./', '')
+  const absPath = path.join(PROJECT_ROOT, 'prisma', relPath)
+  process.env.DATABASE_URL = 'file:' + absPath
+  console.log('📂 Resolved DATABASE_URL to:', process.env.DATABASE_URL)
+}
+
+// Verify database file exists
+const dbMatch = (process.env.DATABASE_URL || '').match(/^file:(.+)$/)
+if (dbMatch) {
+  const dbPath = dbMatch[1]
+  if (!fs.existsSync(dbPath)) {
+    console.error('⚠️  Database file not found at:', dbPath)
+    console.error('   Run: npx prisma db push  (to create the database)')
+    console.error('   Then: node scripts/seed-admin.js  (to seed admin user)')
+  } else {
+    console.log('✅ Database file found at:', dbPath)
+  }
 }
 
 // Now start Next.js

@@ -6,6 +6,7 @@ module.exports = {
       args: 'start -p 3000',
       cwd: '/root/Court-Reservation.Nextjs',
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
       max_memory_restart: '512M',
