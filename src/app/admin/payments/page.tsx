@@ -17,6 +17,7 @@ interface Payment {
   paymentMethod: string | null
   paymentType: string | null
   status: string
+  bookingStatus: string | null
   proofScreenshot: string | null
   transactionId: string | null
   createdAt: string
@@ -271,7 +272,7 @@ function PaymentsContent() {
                     <p className="text-xs text-gray-500">{formatDate(payment.createdAt)}</p>
                   </div>
                   <div className="col-span-1 flex flex-col items-start gap-1">
-                    {(payment.status === 'pending' || payment.status === 'processing') && (
+                    {(payment.status === 'pending' || payment.status === 'processing') && payment.bookingStatus !== 'cancelled' && (
                       <>
                         <button
                           onClick={() => handleVerify(payment.paymentReference, 'approve')}

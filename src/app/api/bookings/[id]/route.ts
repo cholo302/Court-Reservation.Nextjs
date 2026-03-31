@@ -176,6 +176,15 @@ export async function POST(
         },
       })
 
+      // Auto-reject any pending/processing payments for this booking
+      await prisma.payment.updateMany({
+        where: {
+          bookingId: booking.id,
+          status: { in: ['pending', 'processing'] },
+        },
+        data: { status: 'rejected' },
+      })
+
       // Log activity
       await prisma.activityLog.create({
         data: {

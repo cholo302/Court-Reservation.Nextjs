@@ -116,7 +116,22 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
         )
         const data = await response.json()
         if (abortController.signal.aborted) return
-        setSlots(data.slots || [])
+        // Apply client-side past-slot filtering to handle server timezone mismatch
+        const now = new Date()
+        const clientToday = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2, '0'),
+          String(now.getDate()).padStart(2, '0'),
+        ].join('-')
+        const clientHour = now.getHours()
+        const processedSlots = (data.slots || []).map((slot: TimeSlot) => {
+          if (formData.bookingDate === clientToday) {
+            const slotHour = parseInt(slot.start.split(':')[0])
+            if (slotHour <= clientHour) return { ...slot, available: false }
+          }
+          return slot
+        })
+        setSlots(processedSlots)
         // Only clear selected slots if the date actually changed
         if (lastFetchedDate && lastFetchedDate !== formData.bookingDate) {
           setSelectedSlots([])

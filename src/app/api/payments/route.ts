@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
         refundAmount: p.refundAmount ? Number(p.refundAmount) : null,
         bookingCode: p.booking?.bookingCode,
         bookingDate: p.booking?.bookingDate,
+        bookingStatus: p.booking?.status,
         courtName: p.booking?.court?.name,
         userName: p.user?.name,
         userEmail: p.user?.email,
