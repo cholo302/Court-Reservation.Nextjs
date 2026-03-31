@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import BouncingBallLoader, { BallSpinner } from '@/components/ui/BouncingBallLoader'
+import QRCode from 'qrcode'
 
 interface Booking {
   id: number
@@ -29,6 +30,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
   const [referenceNumber, setReferenceNumber] = useState('')
   const [gcashPhone, setGcashPhone] = useState('')
   const [gcashName, setGcashName] = useState('')
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   const [expired, setExpired] = useState(false)
 
@@ -38,8 +40,18 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
         const res = await fetch('/api/settings/payment')
         if (res.ok) {
           const data = await res.json()
-          setGcashPhone(data.gcashNumber || '09123456789')
+          const phone = data.gcashNumber || '09123456789'
+          setGcashPhone(phone)
           setGcashName(data.gcashName || 'Marikina Sports Center')
+          // Generate QR code from phone number
+          try {
+            const dataUrl = await QRCode.toDataURL(phone, {
+              errorCorrectionLevel: 'H',
+              margin: 1,
+              width: 300,
+            })
+            setQrDataUrl(dataUrl)
+          } catch {}
         }
       } catch {
         setGcashPhone('09123456789')
@@ -283,22 +295,18 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
         {/* GCash QR Code */}
         <div className="bg-gray-100 rounded-lg p-8 mb-6 text-center">
           <div className="w-64 h-64 bg-white mx-auto rounded-lg flex items-center justify-center border border-gray-300 overflow-hidden">
-            <img 
-              src="/uploads/qrcodes/gcash-qr.jpg" 
-              alt="GCash QR Code"
-              className="w-full h-full object-contain"
-              onError={(e: any) => {
-                e.currentTarget.parentElement.innerHTML = `
-                  <div class="text-center w-full h-full flex items-center justify-center">
-                    <div>
-                      <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-2"></i>
-                      <p class="text-sm text-gray-600">QR code image not found</p>
-                      <p class="text-xs text-gray-500 mt-2">Contact support to configure</p>
-                    </div>
-                  </div>
-                `
-              }}
-            />
+            {qrDataUrl ? (
+              <img 
+                src={qrDataUrl}
+                alt="GCash QR Code"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-gray-300 border-t-ph-blue rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-sm text-gray-500">Generating QR code...</p>
+              </div>
+            )}
           </div>
           <p className="text-sm text-gray-600 mt-4">
             Or send to: <strong>{gcashPhone}</strong>

@@ -141,6 +141,12 @@ fi
 echo "[5/6] Cleaning old build cache..."
 rm -rf "$APP_DIR/.next"
 
+# Ensure upload directories exist
+mkdir -p "$APP_DIR/public/uploads/proofs"
+mkdir -p "$APP_DIR/public/uploads/users"
+mkdir -p "$APP_DIR/public/uploads/qrcodes"
+mkdir -p "$APP_DIR/public/uploads/courts"
+
 echo "[6/6] Building Next.js..."
 npm run build
 
