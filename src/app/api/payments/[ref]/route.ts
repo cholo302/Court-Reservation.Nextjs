@@ -80,6 +80,11 @@ export async function POST(
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
 
+      // Only allow proof upload for pending payments
+      if (payment.status !== 'pending') {
+        return NextResponse.json({ error: 'Proof can only be uploaded for pending payments' }, { status: 400 })
+      }
+
       const updatedPayment = await prisma.payment.update({
         where: { paymentReference: params.ref },
         data: {

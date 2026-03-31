@@ -63,7 +63,52 @@ export async function PUT(req: NextRequest) {
 
   const body = await req.json()
 
+  const ALLOWED_KEYS = new Set(Object.keys(DEFAULT_SETTINGS))
+  const errors: string[] = []
+
+  for (const key of Object.keys(body)) {
+    if (!ALLOWED_KEYS.has(key)) {
+      errors.push(`Unknown setting: ${key}`)
+    }
+  }
+
+  if (body.bookingStartHour !== undefined && body.bookingEndHour !== undefined) {
+    const start = parseInt(body.bookingStartHour)
+    const end = parseInt(body.bookingEndHour)
+    if (isNaN(start) || isNaN(end) || start < 0 || start > 23 || end < 1 || end > 24) {
+      errors.push('Booking hours must be valid hours (start: 0-23, end: 1-24)')
+    } else if (start >= end) {
+      errors.push('Booking start hour must be before end hour')
+    }
+  } else if (body.bookingStartHour !== undefined || body.bookingEndHour !== undefined) {
+    const numVal = parseInt(body.bookingStartHour ?? body.bookingEndHour)
+    if (isNaN(numVal) || numVal < 0 || numVal > 24) {
+      errors.push('Booking hour must be a valid hour (0-24)')
+    }
+  }
+
+  if (body.downpaymentPercent !== undefined) {
+    const pct = parseInt(body.downpaymentPercent)
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+      errors.push('Downpayment percent must be between 0 and 100')
+    }
+  }
+
+  for (const numKey of ['minBookingHours', 'maxAdvanceBookingDays', 'cancellationHours']) {
+    if (body[numKey] !== undefined) {
+      const val = parseInt(body[numKey])
+      if (isNaN(val) || val < 1) {
+        errors.push(`${numKey} must be a positive integer`)
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    return NextResponse.json({ error: errors.join('; ') }, { status: 400 })
+  }
+
   for (const [key, value] of Object.entries(body)) {
+    if (!ALLOWED_KEYS.has(key)) continue
     await prisma.setting.upsert({
       where: { key },
       update: { value: String(value) },

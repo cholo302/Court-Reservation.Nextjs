@@ -185,17 +185,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate max advance booking days
+    // Validate max advance booking days and reject past dates
     const bookingDate = new Date(data.bookingDate)
     const todayDate = new Date()
     todayDate.setHours(0, 0, 0, 0)
     bookingDate.setHours(0, 0, 0, 0)
     const daysDiff = Math.ceil((bookingDate.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24))
+    if (daysDiff < 0) {
+      return NextResponse.json(
+        { error: 'Cannot create bookings for past dates' },
+        { status: 400 }
+      )
+    }
     if (daysDiff > maxAdvanceBookingDays) {
       return NextResponse.json(
         { error: `Bookings can only be made up to ${maxAdvanceBookingDays} days in advance` },
         { status: 400 }
       )
+    }
+
+    // Validate contiguous time slots
+    if (reqEndHour - reqStartHour > 1) {
+      // For multi-hour bookings, verify they selected all intermediate hours
+      // by checking that the client sent the expected contiguous block
+      const selectedHours = data.selectedSlots || []
+      if (selectedHours.length > 0 && selectedHours.length !== (reqEndHour - reqStartHour)) {
+        return NextResponse.json(
+          { error: 'Please select contiguous (adjacent) time slots only' },
+          { status: 400 }
+        )
+      }
     }
 
     // Check availability - only PAID bookings should block the slot

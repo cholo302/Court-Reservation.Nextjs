@@ -81,6 +81,10 @@ export async function POST(
         break
 
       case 'delete':
+        // Prevent admin from deleting their own account
+        if (parseInt(params.id) === parseInt(session.user.id)) {
+          return NextResponse.json({ error: 'Cannot delete your own admin account' }, { status: 400 })
+        }
         const userId = parseInt(params.id)
         
         // Delete all related records in a transaction with proper order

@@ -38,6 +38,7 @@ export async function POST(
     }
 
     // Update payment status from 'downpayment' to 'paid'
+    let paymentUpdated = false
     if (booking.payments.length > 0) {
       const payment = booking.payments[0]
       
@@ -49,7 +50,12 @@ export async function POST(
             paidAt: new Date(),
           },
         })
+        paymentUpdated = true
       }
+    }
+
+    if (!paymentUpdated) {
+      return NextResponse.json({ error: 'No downpayment found to confirm' }, { status: 400 })
     }
 
     // Update booking payment status to fully paid

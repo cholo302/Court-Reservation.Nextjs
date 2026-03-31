@@ -4,9 +4,19 @@ import prisma from '@/lib/prisma'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const formData = await request.formData()
 
     const email = formData.get('email') as string
@@ -29,6 +39,27 @@ export async function POST(request: NextRequest) {
         { error: 'All fields are required' },
         { status: 400 }
       )
+    }
+
+    // Validate file types and sizes
+    for (const file of [govIdPhoto, facePhoto]) {
+      if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+        return NextResponse.json(
+          { error: `Invalid file type: ${file.type}. Only images are allowed.` },
+          { status: 400 }
+        )
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { error: 'File size exceeds 10MB limit' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Verify the session user matches the email being updated
+    if (session.user.email !== email) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     // Find user by email

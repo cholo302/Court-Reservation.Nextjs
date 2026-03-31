@@ -13,10 +13,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Auto-clean activity logs older than 24 hours
+    // Auto-clean activity logs older than 30 days
     await prisma.activityLog.deleteMany({
       where: {
-        createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        createdAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
       },
     })
 

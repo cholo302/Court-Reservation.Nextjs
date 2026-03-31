@@ -56,6 +56,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Booking must be confirmed before payment can be submitted' }, { status: 400 })
     }
 
+    // Check if booking has expired
+    if (booking.expiresAt && new Date(booking.expiresAt) < new Date()) {
+      return NextResponse.json({ error: 'Booking has expired. Please create a new booking.' }, { status: 400 })
+    }
+
+    // Prevent duplicate proof uploads if a payment is already processing
+    const existingProcessing = await prisma.payment.findFirst({
+      where: {
+        bookingId: parseInt(bookingId),
+        status: { in: ['processing'] },
+      },
+    })
+    if (existingProcessing) {
+      return NextResponse.json({ error: 'A payment is already being processed for this booking' }, { status: 400 })
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
+    if (!allowedTypes.includes(proof.type)) {
+      return NextResponse.json({ error: 'Invalid file type. Only images are allowed.' }, { status: 400 })
+    }
+    if (proof.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File size exceeds 10MB limit' }, { status: 400 })
+    }
+
     // Save the proof image
     const bytes = await proof.arrayBuffer()
     const buffer = Buffer.from(bytes)

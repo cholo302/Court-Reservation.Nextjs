@@ -106,6 +106,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (booking.status === 'cancelled') {
+      return NextResponse.json(
+        { error: 'Cannot create payment for a cancelled booking' },
+        { status: 400 }
+      )
+    }
+
+    // Prevent duplicate pending/processing payments for the same booking
+    const existingPayment = await prisma.payment.findFirst({
+      where: {
+        bookingId: data.bookingId,
+        status: { in: ['pending', 'processing'] },
+      },
+    })
+    if (existingPayment) {
+      return NextResponse.json(
+        { error: 'A payment is already pending for this booking' },
+        { status: 400 }
+      )
+    }
+
     const amount = data.paymentType === 'full' 
       ? Number(booking.totalAmount) 
       : Number(booking.downpaymentAmount)
