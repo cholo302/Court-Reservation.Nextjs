@@ -40,10 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# database (SQLite)
-*.sqlite
+# database journal files
 *.sqlite-journal
-prisma/*.sqlite
 prisma/*.sqlite-journal
 
 # platform-specific SWC binaries (auto-installed by npm)
