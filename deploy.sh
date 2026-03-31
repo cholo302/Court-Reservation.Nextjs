@@ -122,7 +122,11 @@ echo "[6/6] Building Next.js..."
 npm run build
 
 echo "Restarting app with PM2..."
-pm2 reload ecosystem.config.js --update-env
+pm2 delete nextjs-app 2>/dev/null || true
+pm2 delete Court-Reservation 2>/dev/null || true
+pm2 delete all 2>/dev/null || true
+pm2 start ecosystem.config.js
+pm2 save
 
 echo ""
 echo "✅ Deployment complete!"
