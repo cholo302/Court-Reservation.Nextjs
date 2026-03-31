@@ -80,7 +80,9 @@ if [ "$1" == "--setup" ]; then
   npm run build
 
   echo "Starting app with PM2..."
-  pm2 delete all 2>/dev/null || true
+  pm2 kill 2>/dev/null || true
+  fuser -k 3000/tcp 2>/dev/null || true
+  sleep 1
   pm2 start ecosystem.config.js
   pm2 save
   pm2 startup
@@ -143,7 +145,10 @@ echo "[6/6] Building Next.js..."
 npm run build
 
 echo "Restarting app with PM2..."
-pm2 delete all 2>/dev/null || true
+pm2 kill 2>/dev/null || true
+# Kill anything on port 3000
+fuser -k 3000/tcp 2>/dev/null || true
+sleep 1
 pm2 start ecosystem.config.js
 pm2 save
 
