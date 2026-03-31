@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import crypto from 'crypto'
@@ -54,3 +55,4 @@ export async function POST(req: Request) {
     )
   }
 }
+

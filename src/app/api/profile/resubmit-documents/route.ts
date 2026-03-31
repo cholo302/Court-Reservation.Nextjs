@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { prisma } from '@/lib/prisma'
@@ -97,3 +98,4 @@ export async function POST(req: NextRequest) {
     )
   }
 }
+
