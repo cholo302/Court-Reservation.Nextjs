@@ -43,6 +43,22 @@ export default function CameraCapture({
     setCameraReady(false)
     setShowCamera(true)
 
+    // Check for secure context (HTTPS or localhost) — required for camera access
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setCameraError(
+        'Camera requires a secure connection (HTTPS). Please access the site via HTTPS or use localhost. You can upload a file instead.'
+      )
+      return
+    }
+
+    // Check if mediaDevices API is available
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError(
+        'Camera is not supported in this browser. Please try uploading a file instead.'
+      )
+      return
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {

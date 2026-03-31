@@ -78,6 +78,11 @@ export default withAuth(
           return true
         }
 
+        // Uploaded file serving API (public)
+        if (path.startsWith('/api/uploads')) {
+          return true
+        }
+
         if (path.startsWith('/maintenance')) {
           return true
         }
