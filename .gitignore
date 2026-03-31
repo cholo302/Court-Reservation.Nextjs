@@ -50,6 +50,7 @@ prisma/*.sqlite-journal
 public/uploads/proofs/*
 public/uploads/users/*
 public/uploads/qrcodes/*
+!public/uploads/qrcodes/gcash-qr.jpg
 !public/uploads/proofs/.gitkeep
 !public/uploads/users/.gitkeep
 !public/uploads/qrcodes/.gitkeep
