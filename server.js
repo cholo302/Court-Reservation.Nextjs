@@ -28,10 +28,13 @@ if (fs.existsSync(envPath)) {
   console.error('   Run: cp .env.production.example .env && nano .env')
 }
 
-// Resolve relative DATABASE_URL to absolute path
-// Prisma resolves SQLite relative paths from prisma/schema.prisma directory
-// so "file:./court_reservation.sqlite" => <project>/prisma/court_reservation.sqlite
-if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('file:./')) {
+// Always ensure DATABASE_URL is set (absolute path to SQLite file)
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL === 'file:./court_reservation.sqlite' || process.env.DATABASE_URL === 'file:./prisma/court_reservation.sqlite') {
+  const absDbPath = path.join(PROJECT_ROOT, 'prisma', 'court_reservation.sqlite')
+  process.env.DATABASE_URL = 'file:' + absDbPath
+  console.log('📂 Set DATABASE_URL to:', process.env.DATABASE_URL)
+} else if (process.env.DATABASE_URL.startsWith('file:./')) {
+  // Resolve any other relative path
   const relPath = process.env.DATABASE_URL.replace('file:./', '')
   const absPath = path.join(PROJECT_ROOT, 'prisma', relPath)
   process.env.DATABASE_URL = 'file:' + absPath
@@ -49,6 +52,13 @@ if (dbMatch) {
   } else {
     console.log('✅ Database file found at:', dbPath)
   }
+}
+
+// Ensure NEXTAUTH_SECRET is set
+if (!process.env.NEXTAUTH_SECRET) {
+  console.error('⚠️  NEXTAUTH_SECRET is not set! Auth will not work properly.')
+  console.error('   Add NEXTAUTH_SECRET to your .env file')
+  console.error('   Generate one with: openssl rand -base64 32')
 }
 
 // Now start Next.js

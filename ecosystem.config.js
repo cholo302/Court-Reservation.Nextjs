@@ -2,12 +2,14 @@
 const fs = require('fs')
 const path = require('path')
 
+const APP_DIR = __dirname
+
 function loadEnvFile() {
   const envVars = {
     NODE_ENV: 'production',
     PORT: 3000,
   }
-  const envPath = path.join(__dirname, '.env')
+  const envPath = path.join(APP_DIR, '.env')
   if (fs.existsSync(envPath)) {
     const content = fs.readFileSync(envPath, 'utf8')
     for (const line of content.split('\n')) {
@@ -24,16 +26,24 @@ function loadEnvFile() {
       envVars[key] = value
     }
   }
+  // Always ensure DATABASE_URL is absolute
+  const dbUrl = envVars['DATABASE_URL'] || 'file:./court_reservation.sqlite'
+  if (dbUrl === 'file:./court_reservation.sqlite' || dbUrl === 'file:./prisma/court_reservation.sqlite') {
+    envVars['DATABASE_URL'] = 'file:' + path.join(APP_DIR, 'prisma', 'court_reservation.sqlite')
+  } else if (dbUrl.startsWith('file:./')) {
+    const relPath = dbUrl.replace('file:./', '')
+    envVars['DATABASE_URL'] = 'file:' + path.join(APP_DIR, 'prisma', relPath)
+  }
   return envVars
 }
 
 module.exports = {
   apps: [
     {
-      name: 'nextjs-app',
+      name: 'Court-Reservation',
       script: 'server.js',
       args: 'start -p 3000',
-      cwd: '/root/Court-Reservation.Nextjs',
+      cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
@@ -45,8 +55,8 @@ module.exports = {
       kill_timeout: 5000,
       wait_ready: false,
       env: loadEnvFile(),
-      error_file: '/root/.pm2/logs/nextjs-app-error.log',
-      out_file: '/root/.pm2/logs/nextjs-app-out.log',
+      error_file: '/root/.pm2/logs/Court-Reservation-error.log',
+      out_file: '/root/.pm2/logs/Court-Reservation-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },
   ],
