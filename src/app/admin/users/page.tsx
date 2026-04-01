@@ -198,6 +198,7 @@ function UsersContent() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-100">
           <thead className="bg-gray-50/80">
             <tr>
@@ -387,6 +388,7 @@ function UsersContent() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {viewingID && (

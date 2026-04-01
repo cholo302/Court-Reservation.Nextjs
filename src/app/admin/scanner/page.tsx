@@ -86,7 +86,7 @@ export default function QRScannerPage() {
         console.log('Available cameras:', videoDevices.map(d => ({ label: d.label, id: d.deviceId })))
         if (videoDevices.length === 0) {
           setCameraError(true)
-          setCameraErrorMsg('No camera devices found by the browser. Please check:\n1. USB camera is plugged in\n2. Windows Settings → Privacy & Security → Camera → "Camera access" is ON\n3. "Let desktop apps access your camera" is ON\n4. Close any other app using the camera (Zoom, Teams, etc.)')
+          setCameraErrorMsg('No camera devices found. Please check your device camera permissions in browser settings.')
           return
         }
       } catch (enumErr) {
@@ -111,14 +111,22 @@ export default function QRScannerPage() {
         }
       }
 
-      // Strategy 2: Generic fallbacks
+      // Strategy 2: Generic fallbacks (prefer back camera on mobile for QR scanning)
       if (!stream) {
-        const genericStrategies = [
-          { video: true },
-          { video: { width: { ideal: 640 }, height: { ideal: 480 } } },
-          { video: { facingMode: 'user' } },
-          { video: { facingMode: 'environment' } },
-        ]
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        const genericStrategies = isMobile
+          ? [
+              { video: { facingMode: 'environment' } },
+              { video: { facingMode: { exact: 'environment' } } },
+              { video: true },
+              { video: { facingMode: 'user' } },
+            ]
+          : [
+              { video: true },
+              { video: { width: { ideal: 640 }, height: { ideal: 480 } } },
+              { video: { facingMode: 'user' } },
+              { video: { facingMode: 'environment' } },
+            ]
         for (const constraints of genericStrategies) {
           try {
             stream = await navigator.mediaDevices.getUserMedia(constraints)
@@ -654,11 +662,11 @@ export default function QRScannerPage() {
                           <i className="fas fa-wrench mr-1"></i>Quick Fix Steps:
                         </p>
                         <ol className="text-[10px] text-blue-600 space-y-0.5 list-decimal list-inside">
-                          <li>Open <strong>Windows Settings → Privacy &amp; Security → Camera</strong></li>
-                          <li>Turn ON &quot;Camera access&quot;</li>
-                          <li>Turn ON &quot;Let desktop apps access your camera&quot;</li>
-                          <li>Close any app using camera (Zoom, Teams, etc.)</li>
-                          <li>Access via <strong>localhost:3000</strong>, not an IP</li>
+                          <li>Tap the <strong>lock icon</strong> in the address bar</li>
+                          <li>Allow <strong>Camera</strong> permission</li>
+                          <li>Ensure the site uses <strong>HTTPS</strong></li>
+                          <li>Close any other app using the camera</li>
+                          <li>Refresh the page and try again</li>
                         </ol>
                       </div>
                       <div className="flex flex-col gap-2 w-full max-w-[240px]">

@@ -161,3 +161,14 @@ pm2 save
 echo ""
 echo "✅ Deployment complete!"
 pm2 status
+
+# Remind about HTTPS if using a domain
+if grep -q "^NEXTAUTH_URL.*http://" "$APP_DIR/.env" 2>/dev/null; then
+  CURRENT_URL=$(grep "^NEXTAUTH_URL" "$APP_DIR/.env" | head -1)
+  echo ""
+  echo "⚠️  $CURRENT_URL"
+  echo "   If you have SSL/HTTPS configured, update NEXTAUTH_URL to use https://"
+  echo "   Run: nano $APP_DIR/.env"
+  echo "   Change to: NEXTAUTH_URL=\"https://yourdomain.com\""
+  echo "   Then: pm2 restart all"
+fi
