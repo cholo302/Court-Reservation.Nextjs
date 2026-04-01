@@ -198,7 +198,118 @@ function UsersContent() {
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile card layout */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {users.length === 0 ? (
+            <div className="px-5 py-16 text-center">
+              <i className="fas fa-users text-gray-200 text-4xl mb-3"></i>
+              <p className="text-sm text-gray-400">No users found</p>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="px-5 py-16 text-center">
+              <i className="fas fa-search text-gray-200 text-4xl mb-3"></i>
+              <p className="text-sm text-gray-400">No users match your search</p>
+            </div>
+          ) : (
+            filteredUsers.map((user) => (
+              <div key={user.id} className="p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden">
+                    {user.facePhoto || user.profileImage ? (
+                      <img src={user.profileImage || user.facePhoto!} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <i className="fas fa-user text-gray-500"></i>
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    {user.phone && <p className="text-xs text-gray-400">{user.phone}</p>}
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {user.isBlacklisted && (
+                      <span className="bg-red-100 text-red-800 px-2 py-0.5 rounded text-[10px]">Blacklisted</span>
+                    )}
+                    {user.role === 'admin' && !user.isBlacklisted && (
+                      <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-[10px]"><i className="fas fa-shield-halved mr-0.5"></i>Admin</span>
+                    )}
+                    {user.role !== 'admin' && user.isIdInvalid && (
+                      <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-[10px]">Invalid ID</span>
+                    )}
+                    {user.role !== 'admin' && (
+                      user.isIdVerified ? (
+                        <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px]"><i className="fas fa-check-circle mr-0.5"></i>Verified</span>
+                      ) : (
+                        <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px]"><i className="fas fa-clock mr-0.5"></i>Not Verified</span>
+                      )
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {user.role !== 'admin' && user.govIdPhoto && (
+                    <button
+                      onClick={() => setViewingID({ type: 'gov', image: user.govIdPhoto!, updatedAt: user.updatedAt, createdAt: user.createdAt, user })}
+                      className="text-ph-blue hover:text-blue-800 text-xs font-medium inline-flex items-center gap-1"
+                    >
+                      <i className="fas fa-id-card"></i> View ID
+                    </button>
+                  )}
+                  {user.role !== 'admin' && user.facePhoto && (
+                    <button
+                      onClick={() => setViewingID({ type: 'face', image: user.facePhoto!, updatedAt: user.updatedAt, createdAt: user.createdAt, user })}
+                      className="text-green-600 hover:text-green-800 text-xs font-medium inline-flex items-center gap-1"
+                    >
+                      <i className="fas fa-camera"></i> Selfie
+                    </button>
+                  )}
+                  {user.hasResubmittedDocs && (
+                    <span className="inline-flex items-center gap-0.5 bg-blue-100 text-blue-700 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>New
+                    </span>
+                  )}
+                  <span className="text-xs text-gray-400 ml-auto">{new Date(user.createdAt).toLocaleDateString()}</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {user.isBlacklisted ? (
+                    <button onClick={() => handleAction(user.id, 'unblacklist')} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-medium border border-blue-200">
+                      <i className="fas fa-undo text-[10px]"></i> Unblacklist
+                    </button>
+                  ) : (
+                    <button onClick={() => handleAction(user.id, 'blacklist')} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium border border-red-200">
+                      <i className="fas fa-times-circle text-[10px]"></i> Blacklist
+                    </button>
+                  )}
+                  {!user.isIdVerified && user.govIdPhoto && user.role !== 'admin' && (
+                    <button onClick={() => handleAction(user.id, 'verify_id')} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-medium border border-emerald-200">
+                      <i className="fas fa-shield-check text-[10px]"></i> Verify
+                    </button>
+                  )}
+                  {user.isIdVerified && user.role !== 'admin' && (
+                    <button onClick={() => handleAction(user.id, 'unverify_id')} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs font-medium border border-orange-200">
+                      <i className="fas fa-times-circle text-[10px]"></i> Unverify
+                    </button>
+                  )}
+                  {user.role !== 'admin' && (user.isIdInvalid ? (
+                    <button onClick={() => handleAction(user.id, 'valid_id')} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 text-xs font-medium border border-green-200">
+                      <i className="fas fa-check-circle text-[10px]"></i> Valid
+                    </button>
+                  ) : (
+                    <button onClick={() => handleAction(user.id, 'not_valid_id')} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs font-medium border border-orange-200">
+                      <i className="fas fa-exclamation-circle text-[10px]"></i> Not Valid
+                    </button>
+                  ))}
+                  <button onClick={() => handleAction(user.id, 'delete')} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 text-red-700 hover:bg-red-200 text-xs font-medium border border-red-200">
+                    <i className="fas fa-trash-alt text-[10px]"></i> Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-100">
           <thead className="bg-gray-50/80">
             <tr>

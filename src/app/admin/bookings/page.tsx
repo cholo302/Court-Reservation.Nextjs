@@ -161,8 +161,8 @@ function BookingsContent() {
 
       {/* Bookings List */}
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50/80 border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        {/* Table Header - desktop only */}
+        <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50/80 border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wider">
           <div className="col-span-3">Booking</div>
           <div className="col-span-2">Customer</div>
           <div className="col-span-2">Schedule</div>
@@ -186,61 +186,106 @@ function BookingsContent() {
             {filteredBookings.map((booking) => {
               const config = statusConfig[booking.status] || statusConfig.pending
               return (
-                <div
-                  key={booking.id}
-                  className="grid grid-cols-12 gap-4 px-5 py-3.5 items-center hover:bg-gray-50/50 transition"
-                >
-                  <div className="col-span-3 min-w-0">
-                    <p className="font-semibold text-sm text-gray-900">{booking.bookingCode}</p>
-                    <p className="text-xs text-gray-400 truncate">{booking.courtName}</p>
-                  </div>
-                  <div className="col-span-2 min-w-0">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
+                <div key={booking.id}>
+                  {/* Mobile card */}
+                  <div className="md:hidden p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-gray-900">{booking.bookingCode}</p>
+                        <p className="text-xs text-gray-400 truncate">{booking.courtName}</p>
+                      </div>
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${config.bg} ${config.text}`}>
+                        <i className={`fas ${config.icon} text-[10px]`}></i>
+                        {config.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
                         {booking.userAvatar ? (
                           <img src={booking.userAvatar} alt={booking.userName} className="w-full h-full object-cover" />
                         ) : (
-                          <i className="fas fa-user text-gray-400 text-xs"></i>
+                          <i className="fas fa-user text-gray-400 text-[10px]"></i>
                         )}
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm text-gray-900 truncate">{booking.userName}</p>
-                        <p className="text-xs text-gray-400 truncate">{booking.userEmail}</p>
-                      </div>
+                      <p className="text-sm text-gray-700 truncate">{booking.userName}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-500">
+                        {formatDate(booking.bookingDate)} &middot; {formatTime(booking.startTime)}-{formatTime(booking.endTime)}
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">{formatPrice(booking.totalAmount)}</p>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <Link
+                        href={`/admin/bookings/${booking.id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 text-xs font-medium border border-gray-200"
+                      >
+                        <i className="fas fa-eye"></i> View
+                      </Link>
+                      {booking.status === 'confirmed' && !booking.paymentStatus?.includes('paid') && (
+                        <button
+                          onClick={() => handleAction(booking.id, 'cancel')}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium border border-red-200"
+                        >
+                          <i className="fas fa-times-circle"></i> Cancel
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div className="col-span-2">
-                    <p className="text-sm text-gray-900">{formatDate(booking.bookingDate)}</p>
-                    <p className="text-xs text-gray-400">
-                      {formatTime(booking.startTime)}-{formatTime(booking.endTime)}
-                    </p>
-                  </div>
-                  <div className="col-span-1">
-                    <p className="text-sm font-bold text-gray-900">{formatPrice(booking.totalAmount)}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${config.bg} ${config.text}`}>
-                      <i className={`fas ${config.icon} text-xs`}></i>
-                      {config.label}
-                    </span>
-                  </div>
-                  <div className="col-span-2 flex flex-wrap items-center gap-1.5">
-                    <Link
-                      href={`/admin/bookings/${booking.id}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 text-xs font-medium border border-gray-200 transition-colors"
-                    >
-                      <i className="fas fa-eye"></i>
-                      View
-                    </Link>
-                    {booking.status === 'confirmed' && !booking.paymentStatus?.includes('paid') && (
-                      <button
-                        onClick={() => handleAction(booking.id, 'cancel')}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium border border-red-200 transition-colors"
+                  {/* Desktop row */}
+                  <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3.5 items-center hover:bg-gray-50/50 transition">
+                    <div className="col-span-3 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900">{booking.bookingCode}</p>
+                      <p className="text-xs text-gray-400 truncate">{booking.courtName}</p>
+                    </div>
+                    <div className="col-span-2 min-w-0">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
+                          {booking.userAvatar ? (
+                            <img src={booking.userAvatar} alt={booking.userName} className="w-full h-full object-cover" />
+                          ) : (
+                            <i className="fas fa-user text-gray-400 text-xs"></i>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-gray-900 truncate">{booking.userName}</p>
+                          <p className="text-xs text-gray-400 truncate">{booking.userEmail}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-900">{formatDate(booking.bookingDate)}</p>
+                      <p className="text-xs text-gray-400">
+                        {formatTime(booking.startTime)}-{formatTime(booking.endTime)}
+                      </p>
+                    </div>
+                    <div className="col-span-1">
+                      <p className="text-sm font-bold text-gray-900">{formatPrice(booking.totalAmount)}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${config.bg} ${config.text}`}>
+                        <i className={`fas ${config.icon} text-xs`}></i>
+                        {config.label}
+                      </span>
+                    </div>
+                    <div className="col-span-2 flex flex-wrap items-center gap-1.5">
+                      <Link
+                        href={`/admin/bookings/${booking.id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 text-xs font-medium border border-gray-200 transition-colors"
                       >
-                        <i className="fas fa-times-circle"></i>
-                        Cancel
-                      </button>
-                    )}
+                        <i className="fas fa-eye"></i>
+                        View
+                      </Link>
+                      {booking.status === 'confirmed' && !booking.paymentStatus?.includes('paid') && (
+                        <button
+                          onClick={() => handleAction(booking.id, 'cancel')}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium border border-red-200 transition-colors"
+                        >
+                          <i className="fas fa-times-circle"></i>
+                          Cancel
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )

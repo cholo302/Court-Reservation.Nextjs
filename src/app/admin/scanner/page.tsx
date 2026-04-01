@@ -30,7 +30,13 @@ interface CheckIn {
 }
 
 export default function QRScannerPage() {
-  const [mode, setMode] = useState<InputMode>('manual')
+  const [mode, setMode] = useState<InputMode>(() => {
+    // Default to camera on mobile devices for easier scanning
+    if (typeof window !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      return 'camera'
+    }
+    return 'manual'
+  })
   const [scanning, setScanning] = useState(false)
   const [manualCode, setManualCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -55,11 +61,16 @@ export default function QRScannerPage() {
     }
   }, [])
 
-  // Stop scanning when switching modes
+  // Stop scanning when switching modes, auto-start camera on mobile
   useEffect(() => {
     stopScanning()
     setUploadPreview(null)
     setCameraError(false)
+    // Auto-start camera when switching to camera mode on mobile
+    if (mode === 'camera' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      const timer = setTimeout(() => startScanning(), 300)
+      return () => clearTimeout(timer)
+    }
   }, [mode])
 
   const startScanning = async () => {
@@ -80,11 +91,13 @@ export default function QRScannerPage() {
 
       // List available video devices and try by device ID
       let videoDevices: MediaDeviceInfo[] = []
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
       try {
         const devices = await navigator.mediaDevices.enumerateDevices()
         videoDevices = devices.filter(d => d.kind === 'videoinput')
-        console.log('Available cameras:', videoDevices.map(d => ({ label: d.label, id: d.deviceId })))
-        if (videoDevices.length === 0) {
+        // On mobile, enumerateDevices often returns empty until permission is granted
+        // so don't treat 0 devices as fatal — fall through to generic strategies
+        if (videoDevices.length === 0 && !isMobile) {
           setCameraError(true)
           setCameraErrorMsg('No camera devices found. Please check your device camera permissions in browser settings.')
           return
@@ -93,27 +106,28 @@ export default function QRScannerPage() {
         console.warn('Could not enumerate devices:', enumErr)
       }
 
-      // Build strategies: try specific device IDs first, then generic
+      // Build strategies: on mobile, try generic facingMode first; on desktop, try device IDs first
       let stream: MediaStream | null = null
       const errors: string[] = []
 
-      // Strategy 1: Try each specific device by ID
-      for (const device of videoDevices) {
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { deviceId: { exact: device.deviceId } },
-          })
-          console.log('Success with device:', device.label || device.deviceId)
-          break
-        } catch (e: any) {
-          errors.push(`Device "${device.label || device.deviceId}": ${e.name} - ${e.message}`)
-          console.warn('Failed with device:', device.label, e)
+      // On mobile, skip device-specific attempts and go straight to generic strategies
+      // because device IDs from enumerateDevices are often empty/invalid before permission grant
+      if (!isMobile) {
+        // Strategy 1: Try each specific device by ID (desktop only)
+        for (const device of videoDevices) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: { deviceId: { exact: device.deviceId } },
+            })
+            break
+          } catch (e: any) {
+            errors.push(`Device "${device.label || device.deviceId}": ${e.name} - ${e.message}`)
+          }
         }
       }
 
       // Strategy 2: Generic fallbacks (prefer back camera on mobile for QR scanning)
       if (!stream) {
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
         const genericStrategies = isMobile
           ? [
               { video: { facingMode: 'environment' } },

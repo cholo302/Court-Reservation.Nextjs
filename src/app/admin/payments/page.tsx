@@ -123,7 +123,7 @@ function PaymentsContent() {
       </div>
 
       {/* Mini Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-100 p-4">
           <p className="text-xs text-gray-400 mb-1">To Review</p>
           <p className="text-xl font-extrabold text-gray-900">{processingCount}</p>
@@ -183,8 +183,8 @@ function PaymentsContent() {
 
       {/* Payments List */}
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50/80 border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        {/* Table Header - desktop only */}
+        <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50/80 border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wider">
           <div className="col-span-2">Reference</div>
           <div className="col-span-2">Customer</div>
           <div className="col-span-2">Booking</div>
@@ -211,84 +211,66 @@ function PaymentsContent() {
             {filteredPayments.map((payment) => {
               const config = statusConfig[payment.status] || statusConfig.pending
               return (
-                <div
-                  key={payment.id}
-                  className="grid grid-cols-12 gap-4 px-5 py-3.5 items-center hover:bg-gray-50/50 transition"
-                >
-                  <div className="col-span-2 min-w-0">
-                    <p className="font-mono text-xs text-gray-900 truncate">{payment.paymentReference}</p>
-                  </div>
-                  <div className="col-span-2 min-w-0">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
+                <div key={payment.id}>
+                  {/* Mobile card */}
+                  <div className="md:hidden p-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-mono text-xs text-gray-900 truncate min-w-0">{payment.paymentReference}</p>
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${config.bg} ${config.text}`}>
+                        <i className={`fas ${config.icon} text-[10px]`}></i>
+                        {config.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
                         {payment.userAvatar ? (
                           <img src={payment.userAvatar} alt={payment.userName || ''} className="w-full h-full object-cover" />
                         ) : (
-                          <i className="fas fa-user text-gray-400 text-xs"></i>
+                          <i className="fas fa-user text-gray-400 text-[10px]"></i>
                         )}
                       </div>
+                      <p className="text-sm text-gray-700 truncate">{payment.userName || 'N/A'}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
                       <div className="min-w-0">
-                        <p className="text-sm text-gray-900 truncate">{payment.userName || 'N/A'}</p>
+                        <p className="text-sm font-semibold text-gray-900">{payment.bookingCode}</p>
+                        <p className="text-xs text-gray-400 truncate">{payment.courtName}</p>
+                      </div>
+                      <p className="text-sm font-bold text-gray-900">{formatPrice(payment.amount)}</p>
+                    </div>
+                    {payment.transactionId && (
+                      <p className="font-mono text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded truncate w-fit" title={payment.transactionId}>
+                        GCash: {payment.transactionId}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-2">
+                        {payment.proofScreenshot ? (
+                          <button
+                            onClick={() => setViewingProof(payment.proofScreenshot)}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-ph-blue/10 text-ph-blue hover:bg-ph-blue/20 text-xs font-medium border border-ph-blue/20"
+                          >
+                            <i className="fas fa-image text-xs"></i> Proof
+                          </button>
+                        ) : null}
+                        <p className="text-xs text-gray-400">{formatDate(payment.createdAt)}</p>
                       </div>
                     </div>
-                  </div>
-                  <div className="col-span-2 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900">{payment.bookingCode}</p>
-                    <p className="text-xs text-gray-400 truncate">{payment.courtName}</p>
-                  </div>
-                  <div className="col-span-1">
-                    <p className="text-sm font-bold text-gray-900">{formatPrice(payment.amount)}</p>
-                    <p className="text-[10px] text-gray-400 capitalize">{payment.paymentType || ''}</p>
-                  </div>
-                  <div className="col-span-1 min-w-0">
-                    {payment.transactionId ? (
-                      <p className="font-mono text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded truncate" title={payment.transactionId}>
-                        {payment.transactionId}
-                      </p>
-                    ) : (
-                      <span className="text-xs text-gray-300">—</span>
-                    )}
-                  </div>
-                  <div className="col-span-1">
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${config.bg} ${config.text}`}>
-                      <i className={`fas ${config.icon} text-xs`}></i>
-                      {config.label}
-                    </span>
-                  </div>
-                  <div className="col-span-1">
-                    {payment.proofScreenshot ? (
-                      <button
-                        onClick={() => setViewingProof(payment.proofScreenshot)}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded bg-ph-blue/10 text-ph-blue hover:bg-ph-blue/20 text-xs font-medium border border-ph-blue/20 transition-colors"
-                      >
-                        <i className="fas fa-image text-xs"></i>
-                        View
-                      </button>
-                    ) : (
-                      <span className="text-xs text-gray-300">None</span>
-                    )}
-                  </div>
-                  <div className="col-span-1">
-                    <p className="text-xs text-gray-500">{formatDate(payment.createdAt)}</p>
-                  </div>
-                  <div className="col-span-1 flex flex-col items-start gap-1">
                     {(payment.status === 'pending' || payment.status === 'processing') && payment.bookingStatus !== 'cancelled' && (
-                      <>
+                      <div className="flex items-center gap-2 pt-1">
                         <button
                           onClick={() => handleVerify(payment.paymentReference, 'approve')}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-medium border border-emerald-200 transition-colors w-full justify-center"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-medium border border-emerald-200 flex-1 justify-center"
                         >
-                          <i className="fas fa-check-circle"></i>
-                          Approve
+                          <i className="fas fa-check-circle"></i> Approve
                         </button>
                         <button
                           onClick={() => handleVerify(payment.paymentReference, 'reject')}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium border border-red-200 transition-colors w-full justify-center"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium border border-red-200 flex-1 justify-center"
                         >
-                          <i className="fas fa-times-circle"></i>
-                          Reject
+                          <i className="fas fa-times-circle"></i> Reject
                         </button>
-                      </>
+                      </div>
                     )}
                     {payment.status === 'downpayment' && (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-orange-100 text-orange-800 text-xs font-medium">
@@ -300,11 +282,100 @@ function PaymentsContent() {
                         <i className="fas fa-check"></i>Complete
                       </span>
                     )}
-                    {payment.status === 'rejected' && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-red-100 text-red-800 text-xs font-medium">
-                        <i className="fas fa-times"></i>Rejected
+                  </div>
+                  {/* Desktop row */}
+                  <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3.5 items-center hover:bg-gray-50/50 transition">
+                    <div className="col-span-2 min-w-0">
+                      <p className="font-mono text-xs text-gray-900 truncate">{payment.paymentReference}</p>
+                    </div>
+                    <div className="col-span-2 min-w-0">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
+                          {payment.userAvatar ? (
+                            <img src={payment.userAvatar} alt={payment.userName || ''} className="w-full h-full object-cover" />
+                          ) : (
+                            <i className="fas fa-user text-gray-400 text-xs"></i>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-gray-900 truncate">{payment.userName || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-span-2 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">{payment.bookingCode}</p>
+                      <p className="text-xs text-gray-400 truncate">{payment.courtName}</p>
+                    </div>
+                    <div className="col-span-1">
+                      <p className="text-sm font-bold text-gray-900">{formatPrice(payment.amount)}</p>
+                      <p className="text-[10px] text-gray-400 capitalize">{payment.paymentType || ''}</p>
+                    </div>
+                    <div className="col-span-1 min-w-0">
+                      {payment.transactionId ? (
+                        <p className="font-mono text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded truncate" title={payment.transactionId}>
+                          {payment.transactionId}
+                        </p>
+                      ) : (
+                        <span className="text-xs text-gray-300">&mdash;</span>
+                      )}
+                    </div>
+                    <div className="col-span-1">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${config.bg} ${config.text}`}>
+                        <i className={`fas ${config.icon} text-xs`}></i>
+                        {config.label}
                       </span>
-                    )}
+                    </div>
+                    <div className="col-span-1">
+                      {payment.proofScreenshot ? (
+                        <button
+                          onClick={() => setViewingProof(payment.proofScreenshot)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded bg-ph-blue/10 text-ph-blue hover:bg-ph-blue/20 text-xs font-medium border border-ph-blue/20 transition-colors"
+                        >
+                          <i className="fas fa-image text-xs"></i>
+                          View
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-300">None</span>
+                      )}
+                    </div>
+                    <div className="col-span-1">
+                      <p className="text-xs text-gray-500">{formatDate(payment.createdAt)}</p>
+                    </div>
+                    <div className="col-span-1 flex flex-col items-start gap-1">
+                      {(payment.status === 'pending' || payment.status === 'processing') && payment.bookingStatus !== 'cancelled' && (
+                        <>
+                          <button
+                            onClick={() => handleVerify(payment.paymentReference, 'approve')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-medium border border-emerald-200 transition-colors w-full justify-center"
+                          >
+                            <i className="fas fa-check-circle"></i>
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleVerify(payment.paymentReference, 'reject')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium border border-red-200 transition-colors w-full justify-center"
+                          >
+                            <i className="fas fa-times-circle"></i>
+                            Reject
+                          </button>
+                        </>
+                      )}
+                      {payment.status === 'downpayment' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-orange-100 text-orange-800 text-xs font-medium">
+                          <i className="fas fa-clock"></i>Balance pending
+                        </span>
+                      )}
+                      {payment.status === 'paid' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-green-100 text-green-800 text-xs font-medium">
+                          <i className="fas fa-check"></i>Complete
+                        </span>
+                      )}
+                      {payment.status === 'rejected' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-red-100 text-red-800 text-xs font-medium">
+                          <i className="fas fa-times"></i>Rejected
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
