@@ -61,15 +61,19 @@ export default function QRScannerPage() {
     }
   }, [])
 
-  // Stop scanning when switching modes, auto-start camera on mobile
+  // Stop scanning when switching modes
   useEffect(() => {
     stopScanning()
     setUploadPreview(null)
     setCameraError(false)
-    // Auto-start camera when switching to camera mode on mobile
-    if (mode === 'camera' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      const timer = setTimeout(() => startScanning(), 300)
-      return () => clearTimeout(timer)
+    // Auto-start camera only if permission was already granted
+    // (Chrome Android blocks getUserMedia without a user tap gesture)
+    if (mode === 'camera') {
+      navigator.permissions?.query({ name: 'camera' as PermissionName }).then(result => {
+        if (result.state === 'granted') {
+          startScanning()
+        }
+      }).catch(() => {})
     }
   }, [mode])
 
@@ -155,16 +159,27 @@ export default function QRScannerPage() {
         const errorDetail = errors.join('\n')
         console.error('All camera attempts failed:\n', errorDetail)
         setCameraError(true)
-        // Show the first actual error to help diagnose
         const firstError = errors[0] || 'Unknown error'
         if (firstError.includes('NotAllowed') || firstError.includes('Permission')) {
-          setCameraErrorMsg('Camera permission denied. Steps to fix:\n1. Click the lock/camera icon in the address bar → Allow camera\n2. Windows Settings → Privacy & Security → Camera → Turn ON "Camera access" and "Let desktop apps access your camera"')
+          if (isMobile) {
+            setCameraErrorMsg('Camera permission denied. Steps to fix:\n1. Tap the lock icon (or ⋮ menu) in the address bar\n2. Tap "Permissions" or "Site settings"\n3. Set Camera to "Allow"\n4. Reload the page and tap Start Camera')
+          } else {
+            setCameraErrorMsg('Camera permission denied. Steps to fix:\n1. Click the lock/camera icon in the address bar → Allow camera\n2. Windows Settings → Privacy & Security → Camera → Turn ON "Camera access" and "Let desktop apps access your camera"')
+          }
         } else if (firstError.includes('NotReadable') || firstError.includes('TrackStart')) {
-          setCameraErrorMsg('Camera is in use by another application. Close Zoom, Teams, Skype, Windows Camera, or any other app that may be using your camera, then try again.')
+          setCameraErrorMsg('Camera is in use by another app. Close any other app using the camera, then try again.')
         } else if (firstError.includes('NotFound')) {
-          setCameraErrorMsg('Camera not found. Make sure your USB camera is plugged in properly.')
+          if (isMobile) {
+            setCameraErrorMsg('Camera not found. Check that your phone camera is working and no other app is using it.')
+          } else {
+            setCameraErrorMsg('Camera not found. Make sure your USB camera is plugged in properly.')
+          }
         } else {
-          setCameraErrorMsg(`Camera error: ${firstError}\n\nCheck Windows Settings → Privacy & Security → Camera → Make sure "Let desktop apps access your camera" is ON.`)
+          if (isMobile) {
+            setCameraErrorMsg(`Camera error: ${firstError}\n\nTap the lock icon in the address bar → Site settings → Allow Camera.`)
+          } else {
+            setCameraErrorMsg(`Camera error: ${firstError}\n\nCheck Windows Settings → Privacy & Security → Camera → Make sure "Let desktop apps access your camera" is ON.`)
+          }
         }
         return
       }
@@ -201,10 +216,15 @@ export default function QRScannerPage() {
       console.error('Camera error:', error)
       setCameraError(true)
       const msg = error?.message || 'Unknown error'
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
       if (msg.includes('Permission') || msg.includes('NotAllowed')) {
-        setCameraErrorMsg('Camera permission was denied. Click the lock/camera icon in the address bar to allow access.')
+        setCameraErrorMsg(isMobile
+          ? 'Camera permission was denied. Tap the lock icon in the address bar → Site settings → Allow Camera, then reload.'
+          : 'Camera permission was denied. Click the lock/camera icon in the address bar to allow access.')
       } else if (msg.includes('NotFound') || msg.includes('device')) {
-        setCameraErrorMsg('No camera found. Make sure your USB camera is plugged in and not being used by another application.')
+        setCameraErrorMsg(isMobile
+          ? 'Camera not found. Make sure no other app is using your camera.'
+          : 'No camera found. Make sure your USB camera is plugged in and not being used by another application.')
       } else {
         setCameraErrorMsg(msg)
       }
