@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic'
 const DEFAULTS: Record<string, string> = {
   gcashNumber: '09123456789',
   gcashName: 'Marikina Sports Center',
+  gcashQrImage: '/uploads/qrcodes/gcash-qr.jpg',
 }
 
 export async function GET() {
@@ -19,5 +20,6 @@ export async function GET() {
   return NextResponse.json({
     gcashNumber: merged.gcashNumber,
     gcashName: merged.gcashName,
+    gcashQrImage: merged.gcashQrImage,
   })
 }

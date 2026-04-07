@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import toast from 'react-hot-toast'
 import BouncingBallLoader, { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
@@ -17,6 +17,7 @@ interface Settings {
   downpaymentPercent: number
   gcashNumber: string
   gcashName: string
+  gcashQrImage: string
   maintenanceMode: boolean
   adminAlerts: boolean
 }
@@ -25,6 +26,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('general')
+  const [uploadingQr, setUploadingQr] = useState(false)
+  const qrFileInputRef = useRef<HTMLInputElement>(null)
   
   const [settings, setSettings] = useState<Settings>({
     siteName: 'Marikina Sports Center',
@@ -39,6 +42,7 @@ export default function SettingsPage() {
     downpaymentPercent: 50,
     gcashNumber: '09123456789',
     gcashName: 'Marikina Sports Center',
+    gcashQrImage: '/uploads/qrcodes/gcash-qr.jpg',
     maintenanceMode: false,
     adminAlerts: true,
   })
@@ -95,6 +99,32 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     await saveSettings(settings)
+  }
+
+  const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingQr(true)
+    try {
+      const formData = new FormData()
+      formData.append('qrImage', file)
+      const res = await fetch('/api/admin/settings/gcash-qr', {
+        method: 'POST',
+        body: formData,
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Upload failed')
+      }
+      const data = await res.json()
+      setSettings({ ...settings, gcashQrImage: data.imagePath + '?t=' + Date.now() })
+      toast.success('GCash QR code updated successfully')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to upload QR code')
+    } finally {
+      setUploadingQr(false)
+      if (qrFileInputRef.current) qrFileInputRef.current.value = ''
+    }
   }
 
   const tabs = [
@@ -331,6 +361,61 @@ export default function SettingsPage() {
                           onChange={handleChange}
                           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ph-blue focus:border-transparent"
                         />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          GCash QR Code
+                        </label>
+                        <p className="text-xs text-gray-500 mb-3">
+                          Upload your GCash QR code image. This will be shown to customers during payment.
+                        </p>
+                        <div className="flex items-start gap-4">
+                          <div className="w-40 h-40 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {settings.gcashQrImage ? (
+                              <img
+                                src={settings.gcashQrImage}
+                                alt="GCash QR Code"
+                                className="w-full h-full object-contain"
+                                onError={(e: any) => {
+                                  e.currentTarget.style.display = 'none'
+                                  e.currentTarget.nextElementSibling.style.display = 'flex'
+                                }}
+                              />
+                            ) : null}
+                            <div className={`flex-col items-center justify-center text-center ${settings.gcashQrImage ? 'hidden' : 'flex'}`}>
+                              <i className="fas fa-qrcode text-gray-300 text-3xl mb-2"></i>
+                              <p className="text-xs text-gray-400">No QR code</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <input
+                              ref={qrFileInputRef}
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              onChange={handleQrUpload}
+                              className="hidden"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => qrFileInputRef.current?.click()}
+                              disabled={uploadingQr}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-ph-blue text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium disabled:opacity-50"
+                            >
+                              {uploadingQr ? (
+                                <>
+                                  <BallSpinner />
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <i className="fas fa-upload text-xs"></i>
+                                  {settings.gcashQrImage ? 'Change QR Code' : 'Upload QR Code'}
+                                </>
+                              )}
+                            </button>
+                            <p className="text-[11px] text-gray-400">JPG, PNG, or WEBP. Max 5MB.</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

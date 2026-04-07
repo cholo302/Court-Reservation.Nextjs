@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   downpaymentPercent: '50',
   gcashNumber: '09123456789',
   gcashName: 'Marikina Sports Center',
+  gcashQrImage: '/uploads/qrcodes/gcash-qr.jpg',
   maintenanceMode: 'false',
   adminAlerts: 'true',
 }
@@ -49,6 +50,7 @@ export async function GET() {
       downpaymentPercent: parseInt(merged.downpaymentPercent),
       gcashNumber: merged.gcashNumber,
       gcashName: merged.gcashName,
+      gcashQrImage: merged.gcashQrImage,
       maintenanceMode: merged.maintenanceMode === 'true',
       adminAlerts: merged.adminAlerts === 'true',
     },

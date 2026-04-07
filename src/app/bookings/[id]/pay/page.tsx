@@ -29,6 +29,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
   const [referenceNumber, setReferenceNumber] = useState('')
   const [gcashPhone, setGcashPhone] = useState('')
   const [gcashName, setGcashName] = useState('')
+  const [gcashQrImage, setGcashQrImage] = useState('/uploads/qrcodes/gcash-qr.jpg')
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   const [expired, setExpired] = useState(false)
 
@@ -40,6 +41,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
           const data = await res.json()
           setGcashPhone(data.gcashNumber || '09123456789')
           setGcashName(data.gcashName || 'Marikina Sports Center')
+          if (data.gcashQrImage) setGcashQrImage(data.gcashQrImage)
         }
       } catch {
         setGcashPhone('09123456789')
@@ -284,7 +286,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
         <div className="bg-gray-100 rounded-lg p-8 mb-6 text-center">
           <div className="w-64 h-64 bg-white mx-auto rounded-lg flex items-center justify-center border border-gray-300 overflow-hidden">
             <img 
-              src="/uploads/qrcodes/gcash-qr.jpg" 
+              src={gcashQrImage} 
               alt="GCash QR Code"
               className="w-full h-full object-contain"
               onError={(e: any) => {
