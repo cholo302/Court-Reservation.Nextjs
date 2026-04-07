@@ -99,7 +99,7 @@ export default function EditCourtPage() {
       setForm((f) => ({ ...f, thumbnail: data.url }))
       toast.success('Image uploaded')
     } catch (err: any) {
-      toast.error(err.message || 'Upload failed')
+      toast.error(err?.message || 'Upload failed')
     } finally {
       setThumbnailUploading(false)
     }
@@ -161,7 +161,7 @@ export default function EditCourtPage() {
       toast.success('Court updated successfully')
       router.push('/admin/courts')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update court')
+      toast.error(error?.message || 'Failed to update court')
     } finally {
       setSaving(false)
     }

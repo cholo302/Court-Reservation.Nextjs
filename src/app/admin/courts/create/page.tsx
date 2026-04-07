@@ -67,7 +67,7 @@ export default function CreateCourtPage() {
       setForm((f) => ({ ...f, thumbnail: data.url }))
       toast.success('Image uploaded')
     } catch (err: any) {
-      toast.error(err.message || 'Upload failed')
+      toast.error(err?.message || 'Upload failed')
     } finally {
       setThumbnailUploading(false)
     }
@@ -128,7 +128,7 @@ export default function CreateCourtPage() {
       toast.success('Court created successfully')
       router.push('/admin/courts')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create court')
+      toast.error(error?.message || 'Failed to create court')
     } finally {
       setLoading(false)
     }

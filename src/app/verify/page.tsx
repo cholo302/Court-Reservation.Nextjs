@@ -91,7 +91,7 @@ export default function VerifyPage() {
       
       router.refresh()
     } catch (error: any) {
-      toast.error(error.message || 'An error occurred. Please try again.')
+      toast.error(error?.message || 'An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }

@@ -142,7 +142,7 @@ export default function ProfilePage() {
       toast.success('Password changed successfully')
       setPasswordData({ currentPassword: '', password: '', passwordConfirmation: '' })
     } catch (error: any) {
-      toast.error(error.message || 'Failed to change password')
+      toast.error(error?.message || 'Failed to change password')
     } finally {
       setSaving(false)
     }

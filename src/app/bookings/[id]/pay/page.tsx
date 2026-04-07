@@ -148,7 +148,7 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
       toast.success('Payment proof uploaded! Waiting for admin verification.')
       router.push(`/bookings/${params.id}`)
     } catch (error: any) {
-      toast.error(error.message || 'Failed to process payment')
+      toast.error(error?.message || 'Failed to process payment')
     } finally {
       setUploading(false)
     }

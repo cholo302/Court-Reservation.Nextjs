@@ -234,7 +234,7 @@ export default function CreateBookingPage({ params }: { params: { courtId: strin
       toast.success('Booking confirmed! Complete your payment.')
       router.push(`/bookings/${data.booking.id}/pay`)
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create booking')
+      toast.error(error?.message || 'Failed to create booking')
     } finally {
       setSubmitting(false)
     }

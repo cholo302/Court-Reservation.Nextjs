@@ -179,7 +179,7 @@ export default function RegisterPage() {
       toast.success('Account created successfully! You can now sign in.')
       router.push('/login')
     } catch (error: any) {
-      toast.error(error.message || 'An error occurred. Please try again.')
+      toast.error(error?.message || 'An error occurred. Please try again.')
       setCaptcha(genCaptcha())
       setCaptchaInput('')
     } finally {

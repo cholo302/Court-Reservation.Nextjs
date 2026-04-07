@@ -120,7 +120,7 @@ export default function SettingsPage() {
       setSettings({ ...settings, gcashQrImage: data.imagePath + '?t=' + Date.now() })
       toast.success('GCash QR code updated successfully')
     } catch (error: any) {
-      toast.error(error.message || 'Failed to upload QR code')
+      toast.error(error?.message || 'Failed to upload QR code')
     } finally {
       setUploadingQr(false)
       if (qrFileInputRef.current) qrFileInputRef.current.value = ''

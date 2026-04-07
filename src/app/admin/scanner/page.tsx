@@ -125,7 +125,7 @@ export default function QRScannerPage() {
             })
             break
           } catch (e: any) {
-            errors.push(`Device "${device.label || device.deviceId}": ${e.name} - ${e.message}`)
+            errors.push(`Device "${device.label || device.deviceId}": ${e?.name} - ${e?.message}`)
           }
         }
       }
@@ -150,7 +150,7 @@ export default function QRScannerPage() {
             stream = await navigator.mediaDevices.getUserMedia(constraints)
             break
           } catch (e: any) {
-            errors.push(`Generic ${JSON.stringify(constraints.video)}: ${e.name} - ${e.message}`)
+            errors.push(`Generic ${JSON.stringify(constraints.video)}: ${e?.name} - ${e?.message}`)
           }
         }
       }
@@ -530,7 +530,7 @@ export default function QRScannerPage() {
         toast.error(`Booking status: ${booking.status}`)
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to verify booking')
+      toast.error(error?.message || 'Failed to verify booking')
     } finally {
       setLoading(false)
     }
@@ -559,7 +559,7 @@ export default function QRScannerPage() {
       toast.success('Balance payment confirmed!')
       setResult({ ...result, paymentStatus: 'paid' })
     } catch (error: any) {
-      toast.error(error.message || 'Failed to confirm payment')
+      toast.error(error?.message || 'Failed to confirm payment')
     } finally {
       setConfirmingPayment(false)
     }
@@ -593,7 +593,7 @@ export default function QRScannerPage() {
       toast.success('Customer checked in successfully!')
       setResult({ ...result, status: 'completed' })
     } catch (error: any) {
-      toast.error(error.message || 'Failed to check in')
+      toast.error(error?.message || 'Failed to check in')
     } finally {
       setCheckingIn(false)
     }
