@@ -38,7 +38,7 @@ export default function AdminLayout({
     <div className="min-h-screen bg-gray-50">
       <AdminSidebar />
       <main className="lg:ml-64 min-h-screen transition-all duration-300">
-        <div className="pt-18 lg:pt-0 p-4 lg:p-8">{children}</div>
+        <div className="pt-[4.5rem] lg:pt-0 p-4 lg:p-8">{children}</div>
       </main>
     </div>
   )
