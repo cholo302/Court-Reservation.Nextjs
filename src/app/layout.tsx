@@ -11,8 +11,35 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'OLOPSC Court Reservation',
-  description: 'Book sports courts at Our Lady of Perpetual Succor College - Basketball, Badminton, Volleyball, Ping Pong and more',
+  title: {
+    default: 'OLOPSC Court Reservation - Book Sports Courts Online',
+    template: '%s | OLOPSC Court Reservation',
+  },
+  description: 'Book sports courts at Our Lady of Perpetual Succor College. Reserve Basketball, Badminton, Volleyball, and Ping Pong courts online with instant confirmation and QR code entry.',
+  keywords: [
+    'OLOPSC', 'court reservation', 'sports booking', 'basketball court',
+    'badminton court', 'volleyball court', 'ping pong', 'Our Lady of Perpetual Succor College',
+    'court booking', 'sports facility', 'online reservation',
+  ],
+  authors: [{ name: 'OLOPSC Court Reservation' }],
+  openGraph: {
+    title: 'OLOPSC Court Reservation - Book Sports Courts Online',
+    description: 'Reserve Basketball, Badminton, Volleyball, and Ping Pong courts at Our Lady of Perpetual Succor College. Instant confirmation with QR code entry.',
+    url: 'https://courtreserve.site',
+    siteName: 'OLOPSC Court Reservation',
+    locale: 'en_PH',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'OLOPSC Court Reservation',
+    description: 'Book sports courts online at OLOPSC. Basketball, Badminton, Volleyball, Ping Pong and more.',
+  },
+  metadataBase: new URL('https://courtreserve.site'),
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function RootLayout({
