@@ -291,10 +291,11 @@ export default function Navbar() {
 
                 <Link
                   href="/bookings"
-                  className="text-gray-600 hover:text-ph-blue hover:bg-blue-50 px-3.5 py-2 rounded-lg text-sm font-medium transition-all"
+                  className="text-gray-600 hover:text-ph-blue hover:bg-blue-50 px-2 sm:px-3.5 py-2 rounded-lg text-sm font-medium transition-all"
+                  title="My Bookings"
                 >
-                  <i className="fas fa-calendar-check mr-1.5"></i>
-                  My Bookings
+                  <i className="fas fa-calendar-check sm:mr-1.5"></i>
+                  <span className="hidden sm:inline">My Bookings</span>
                 </Link>
 
                 <div className="relative" ref={dropdownRef}>
