@@ -54,6 +54,12 @@ export default function ProfilePage() {
     passwordConfirmation: '',
   })
 
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  })
+
   const [preferences, setPreferences] = useState({
     sms: true,
     email: true,
@@ -391,52 +397,79 @@ export default function ProfilePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Current Password
                   </label>
-                  <input
-                    type="password"
-                    name="current_password"
-                    required
-                    value={passwordData.currentPassword}
-                    onChange={(e) =>
-                      setPasswordData({ ...passwordData, currentPassword: e.target.value })
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPasswords.current ? 'text' : 'password'}
+                      name="current_password"
+                      required
+                      value={passwordData.currentPassword}
+                      onChange={(e) =>
+                        setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-ph-blue focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      <i className={`fas ${showPasswords.current ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     New Password
                   </label>
-                  <input
-                    type="password"
-                    name="password"
-                    required
-                    minLength={8}
-                    value={passwordData.password}
-                    onChange={(e) =>
-                      setPasswordData({ ...passwordData, password: e.target.value })
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPasswords.new ? 'text' : 'password'}
+                      name="password"
+                      required
+                      minLength={8}
+                      value={passwordData.password}
+                      onChange={(e) =>
+                        setPasswordData({ ...passwordData, password: e.target.value })
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-ph-blue focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      <i className={`fas ${showPasswords.new ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Confirm New Password
                   </label>
-                  <input
-                    type="password"
-                    name="password_confirmation"
-                    required
-                    value={passwordData.passwordConfirmation}
-                    onChange={(e) =>
-                      setPasswordData({
-                        ...passwordData,
-                        passwordConfirmation: e.target.value,
-                      })
-                    }
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-ph-blue focus:border-transparent"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPasswords.confirm ? 'text' : 'password'}
+                      name="password_confirmation"
+                      required
+                      value={passwordData.passwordConfirmation}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          passwordConfirmation: e.target.value,
+                        })
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-ph-blue focus:border-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      <i className={`fas ${showPasswords.confirm ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                    </button>
+                  </div>
                 </div>
               </div>
 

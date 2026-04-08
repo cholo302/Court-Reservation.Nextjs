@@ -16,6 +16,8 @@ export default function RegisterPage() {
   }
 
   const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [captcha, setCaptcha] = useState({ a: 0, b: 0, answer: '' })
   const [captchaInput, setCaptchaInput] = useState('')
 
@@ -316,7 +318,7 @@ export default function RegisterPage() {
                   <i className="fas fa-lock text-gray-400"></i>
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
                   value={formData.password}
@@ -325,6 +327,13 @@ export default function RegisterPage() {
                   className={fieldClassWithIcon('password')}
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                </button>
               </div>
               <ErrorMsg name="password" />
               {!errors['password'] && <p className="mt-1 text-xs text-gray-500">At least 6 characters</p>}
@@ -342,7 +351,7 @@ export default function RegisterPage() {
                   <i className="fas fa-lock text-gray-400"></i>
                 </div>
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   id="passwordConfirmation"
                   name="passwordConfirmation"
                   value={formData.passwordConfirmation}
@@ -351,6 +360,13 @@ export default function RegisterPage() {
                   className={fieldClassWithIcon('passwordConfirmation')}
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <i className={`fas ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                </button>
               </div>
               <ErrorMsg name="passwordConfirmation" />
             </div>
