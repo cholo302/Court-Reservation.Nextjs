@@ -174,9 +174,8 @@ export default function Navbar() {
               <div className="w-10 h-10 rounded-full overflow-hidden mr-2.5 flex-shrink-0 group-hover:scale-105 transition-transform shadow-md">
                 <img src="/olopsc-logo.png" alt="OLOPSC" className="w-full h-full object-cover" />
               </div>
-              <span className="text-base sm:text-lg font-bold bg-gradient-to-r from-ph-blue to-blue-600 bg-clip-text text-transparent leading-tight">
-                <span className="hidden sm:inline">OLOPSC Court Reservation</span>
-                <span className="sm:hidden">OLOPSC<br/>Court Reservation</span>
+              <span className="text-sm sm:text-lg font-bold bg-gradient-to-r from-ph-blue to-blue-600 bg-clip-text text-transparent leading-tight whitespace-nowrap">
+                OLOPSC Court Reservation
               </span>
             </Link>
           </div>
@@ -202,7 +201,7 @@ export default function Navbar() {
                   </button>
 
                   {isNotifOpen && (
-                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-fade-in">
+                    <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-96 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-fade-in">
                       {/* Header */}
                       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/80">
                         <h3 className="font-semibold text-gray-900 text-sm">Notifications</h3>
