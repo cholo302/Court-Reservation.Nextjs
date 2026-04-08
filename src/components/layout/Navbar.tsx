@@ -174,8 +174,8 @@ export default function Navbar() {
               <div className="w-10 h-10 rounded-full overflow-hidden mr-2.5 flex-shrink-0 group-hover:scale-105 transition-transform shadow-md">
                 <img src="/olopsc-logo.png" alt="OLOPSC" className="w-full h-full object-cover" />
               </div>
-              <span className="text-sm sm:text-lg font-bold bg-gradient-to-r from-ph-blue to-blue-600 bg-clip-text text-transparent leading-tight whitespace-nowrap">
-                OLOPSC Court Reservation
+              <span className="text-sm sm:text-lg font-bold bg-gradient-to-r from-ph-blue to-blue-600 bg-clip-text text-transparent leading-tight">
+                OLOPSC<br/>Court Reservation
               </span>
             </Link>
           </div>
