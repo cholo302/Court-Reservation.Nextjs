@@ -13,7 +13,7 @@ export async function GET() {
     }
 
     const [pendingBookings, pendingPayments, pendingUsers] = await Promise.all([
-      prisma.booking.count({ where: { status: 'pending' } }),
+      prisma.booking.count({ where: { status: 'confirmed', paymentStatus: 'unpaid' } }),
       prisma.payment.count({ where: { status: { in: ['pending', 'processing'] } } }),
       prisma.user.count({
         where: {
