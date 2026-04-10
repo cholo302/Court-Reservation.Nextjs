@@ -37,8 +37,21 @@ export default function AdminSidebar() {
       } catch {}
     }
     fetchCounts()
-    const interval = setInterval(fetchCounts, 30000) // Refresh every 30s
-    return () => clearInterval(interval)
+    const interval = setInterval(fetchCounts, 10000)
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchCounts()
+    }
+    const handleFocus = () => fetchCounts()
+
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
 
   // Build badge map
