@@ -21,6 +21,32 @@ export default function AdminSidebar() {
   const { data: session } = useSession()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [counts, setCounts] = useState<{ pendingBookings: number; pendingPayments: number; pendingUsers: number }>({
+    pendingBookings: 0, pendingPayments: 0, pendingUsers: 0,
+  })
+
+  // Fetch sidebar notification counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const res = await fetch('/api/admin/sidebar-counts')
+        if (res.ok) {
+          const data = await res.json()
+          setCounts(data)
+        }
+      } catch {}
+    }
+    fetchCounts()
+    const interval = setInterval(fetchCounts, 30000) // Refresh every 30s
+    return () => clearInterval(interval)
+  }, [])
+
+  // Build badge map
+  const badgeMap: Record<string, number> = {
+    '/admin/bookings': counts.pendingBookings,
+    '/admin/payments': counts.pendingPayments,
+    '/admin/users': counts.pendingUsers,
+  }
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -101,6 +127,7 @@ export default function AdminSidebar() {
         <div className="space-y-0.5">
           {menuItems.map((item) => {
             const active = isActive(item.href)
+            const badge = badgeMap[item.href] || 0
             return (
               <Link
                 key={item.href}
@@ -112,8 +139,24 @@ export default function AdminSidebar() {
                 } ${collapsed && !mobileOpen ? 'justify-center' : ''}`}
                 title={collapsed && !mobileOpen ? item.label : undefined}
               >
-                <i className={`fas ${item.icon} w-5 text-center text-sm ${active ? 'text-ph-blue' : ''}`}></i>
-                {(!collapsed || mobileOpen) && <span>{item.label}</span>}
+                <div className="relative">
+                  <i className={`fas ${item.icon} w-5 text-center text-sm ${active ? 'text-ph-blue' : ''}`}></i>
+                  {badge > 0 && collapsed && !mobileOpen && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                      {badge > 99 ? '99+' : badge}
+                    </span>
+                  )}
+                </div>
+                {(!collapsed || mobileOpen) && (
+                  <>
+                    <span className="flex-1">{item.label}</span>
+                    {badge > 0 && (
+                      <span className="min-w-[20px] h-5 bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center px-1.5">
+                        {badge > 99 ? '99+' : badge}
+                      </span>
+                    )}
+                  </>
+                )}
               </Link>
             )
           })}
