@@ -63,6 +63,7 @@ export async function PATCH(request: NextRequest) {
         where: {
           userId: parseInt(session.user.id),
           readAt: null,
+          channel: 'web',
         },
         data: { readAt: new Date() },
       })

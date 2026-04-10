@@ -58,6 +58,8 @@ function getNotificationIcon(type: string) {
     case 'payment_rejected':
       return { icon: 'fa-credit-card', color: 'text-red-500', bg: 'bg-red-50' }
     case 'verification_submitted':
+    case 'verification_pending':
+    case 'id_resubmitted':
       return { icon: 'fa-clock', color: 'text-amber-500', bg: 'bg-amber-50' }
     default:
       return { icon: 'fa-bell', color: 'text-blue-500', bg: 'bg-blue-50' }
@@ -109,7 +111,7 @@ export default function Navbar() {
     } catch (err) {
       console.error('Failed to fetch notifications:', err)
     }
-  }, [session?.user?.id])
+  }, [session?.user?.id, session?.user?.role])
 
   // Fetch on mount and periodically
   useEffect(() => {
@@ -232,7 +234,7 @@ export default function Navbar() {
                           notifications.map((notif) => {
                             const { icon, color, bg } = getNotificationIcon(notif.type)
                             const isUnread = !notif.readAt
-                            const href = notif.type.includes('id_') || notif.type === 'documents_resubmit'
+                            const href = notif.type.includes('id_') || notif.type === 'documents_resubmit' || notif.type === 'verification_submitted' || notif.type === 'verification_pending' || notif.type === 'id_resubmitted'
                               ? '/verify'
                               : notif.type.includes('booking')
                               ? '/bookings'

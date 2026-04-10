@@ -44,9 +44,22 @@ function getNotificationStyle(type: string) {
       return { icon: 'fa-calendar-check', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' }
     case 'booking_cancelled':
       return { icon: 'fa-calendar-xmark', color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200' }
+    case 'booking_completed':
+    case 'booking_checked_in':
+      return { icon: 'fa-circle-check', color: 'text-green-500', bg: 'bg-green-50', border: 'border-green-200' }
+    case 'booking_no_show':
+      return { icon: 'fa-user-xmark', color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200' }
     case 'payment_received':
+    case 'payment_verified':
+    case 'payment_confirmed':
       return { icon: 'fa-credit-card', color: 'text-green-500', bg: 'bg-green-50', border: 'border-green-200' }
+    case 'payment_submitted':
+      return { icon: 'fa-receipt', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' }
+    case 'payment_rejected':
+      return { icon: 'fa-credit-card', color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200' }
     case 'verification_submitted':
+    case 'verification_pending':
+    case 'id_resubmitted':
       return { icon: 'fa-clock', color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' }
     default:
       return { icon: 'fa-bell', color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' }
@@ -116,7 +129,7 @@ export default function NotificationsPage() {
   }
 
   const getNotificationLink = (type: string) => {
-    if (type.includes('id_') || type === 'documents_resubmit') return '/verify'
+    if (type.includes('id_') || type === 'documents_resubmit' || type === 'verification_submitted' || type === 'verification_pending' || type === 'id_resubmitted') return '/verify'
     if (type.includes('booking')) return '/bookings'
     if (type.includes('payment')) return '/bookings'
     return null
