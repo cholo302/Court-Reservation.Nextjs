@@ -113,24 +113,18 @@ export default function Navbar() {
     }
   }, [session?.user?.id, session?.user?.role])
 
-  // Fetch on mount, periodically (10s), and on tab focus/visibility
+  // Fetch on mount, periodically, and on tab focus
   useEffect(() => {
     if (session?.user?.id && session?.user?.role !== 'admin') {
       fetchNotifications()
-      const interval = setInterval(fetchNotifications, 10000)
-
-      const handleVisibility = () => {
+      const interval = setInterval(fetchNotifications, 30000)
+      const onVisibility = () => {
         if (document.visibilityState === 'visible') fetchNotifications()
       }
-      const handleFocus = () => fetchNotifications()
-
-      document.addEventListener('visibilitychange', handleVisibility)
-      window.addEventListener('focus', handleFocus)
-
+      document.addEventListener('visibilitychange', onVisibility)
       return () => {
         clearInterval(interval)
-        document.removeEventListener('visibilitychange', handleVisibility)
-        window.removeEventListener('focus', handleFocus)
+        document.removeEventListener('visibilitychange', onVisibility)
       }
     }
   }, [session?.user?.id, fetchNotifications])

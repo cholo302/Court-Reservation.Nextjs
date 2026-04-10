@@ -62,6 +62,15 @@ function UsersContent() {
 
   useEffect(() => {
     fetchUsers()
+    const interval = setInterval(fetchUsers, 15000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchUsers()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [filter])
 
   const filteredUsers = users.filter(

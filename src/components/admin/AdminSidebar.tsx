@@ -37,20 +37,14 @@ export default function AdminSidebar() {
       } catch {}
     }
     fetchCounts()
-    const interval = setInterval(fetchCounts, 10000)
-
-    const handleVisibility = () => {
+    const interval = setInterval(fetchCounts, 30000)
+    const onVisibility = () => {
       if (document.visibilityState === 'visible') fetchCounts()
     }
-    const handleFocus = () => fetchCounts()
-
-    document.addEventListener('visibilitychange', handleVisibility)
-    window.addEventListener('focus', handleFocus)
-
+    document.addEventListener('visibilitychange', onVisibility)
     return () => {
       clearInterval(interval)
-      document.removeEventListener('visibilitychange', handleVisibility)
-      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
 

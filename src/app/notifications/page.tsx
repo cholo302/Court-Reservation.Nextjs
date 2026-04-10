@@ -80,6 +80,15 @@ export default function NotificationsPage() {
     }
     if (status === 'authenticated') {
       fetchNotifications()
+      const interval = setInterval(fetchNotifications, 15000)
+      const onVisibility = () => {
+        if (document.visibilityState === 'visible') fetchNotifications()
+      }
+      document.addEventListener('visibilitychange', onVisibility)
+      return () => {
+        clearInterval(interval)
+        document.removeEventListener('visibilitychange', onVisibility)
+      }
     }
   }, [status, router])
 

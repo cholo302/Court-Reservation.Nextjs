@@ -54,6 +54,15 @@ function BookingsContent() {
 
   useEffect(() => {
     fetchBookings()
+    const interval = setInterval(fetchBookings, 15000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchBookings()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [currentStatus])
 
   const filteredBookings = bookings.filter(

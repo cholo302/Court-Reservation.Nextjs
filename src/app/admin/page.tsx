@@ -105,6 +105,15 @@ export default function AdminDashboard() {
       }
     }
     fetchDashboardData()
+    const interval = setInterval(fetchDashboardData, 30000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchDashboardData()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [])
 
   // Poll activity logs every 10 seconds for live updates

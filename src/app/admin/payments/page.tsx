@@ -59,6 +59,15 @@ function PaymentsContent() {
 
   useEffect(() => {
     fetchPayments()
+    const interval = setInterval(fetchPayments, 15000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchPayments()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [currentStatus])
 
   const filteredPayments = payments.filter(
