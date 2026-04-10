@@ -12,8 +12,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const [pendingBookings, pendingPayments, pendingUsers] = await Promise.all([
-      prisma.booking.count({ where: { status: 'confirmed', paymentStatus: 'unpaid' } }),
+      prisma.booking.count({ where: { status: 'confirmed', paymentStatus: 'unpaid', createdAt: { gte: last24h } } }),
       prisma.payment.count({ where: { status: { in: ['pending', 'processing'] } } }),
       prisma.user.count({
         where: {
