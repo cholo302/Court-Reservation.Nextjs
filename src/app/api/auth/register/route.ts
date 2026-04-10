@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { hash } from 'bcryptjs'
+import { sendWelcomeEmail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -78,6 +79,11 @@ export async function POST(request: NextRequest) {
         entityId: user.id,
       },
     })
+
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(email, firstName).catch((err) =>
+      console.error('Failed to send welcome email:', err)
+    )
 
     return NextResponse.json(
       {

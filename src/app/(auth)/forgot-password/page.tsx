@@ -2,14 +2,13 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { BallSpinner } from '@/components/ui/BouncingBallLoader'
 
 export default function ForgotPasswordPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,12 +28,8 @@ export default function ForgotPasswordPage() {
         return
       }
 
-      if (data.token) {
-        toast.success('Reset link generated! Redirecting...')
-        router.push(`/reset-password?token=${data.token}`)
-      } else {
-        toast.success(data.message)
-      }
+      toast.success('Check your email for the reset link!')
+      setEmailSent(true)
     } catch {
       toast.error('Something went wrong. Please try again.')
     } finally {
@@ -64,6 +59,25 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">
+          {emailSent ? (
+            <div className="text-center py-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-envelope-circle-check text-green-500 text-2xl"></i>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Check Your Email</h3>
+              <p className="text-gray-500 text-sm mb-6">
+                We&apos;ve sent a password reset link to <strong>{email}</strong>. Please check your inbox and spam folder.
+              </p>
+              <p className="text-gray-400 text-xs mb-4">The link will expire in 30 minutes.</p>
+              <button
+                onClick={() => { setEmailSent(false); setEmail('') }}
+                className="text-sm text-ph-blue hover:text-blue-700 font-semibold"
+              >
+                <i className="fas fa-redo mr-1 text-xs"></i>
+                Try a different email
+              </button>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -96,11 +110,12 @@ export default function ForgotPasswordPage() {
                 </>
               ) : (
                 <>
-                  <i className="fas fa-paper-plane mr-2"></i> Reset Password
+                  <i className="fas fa-paper-plane mr-2"></i> Send Reset Link
                 </>
               )}
             </button>
           </form>
+          )}
 
           <div className="mt-6 text-center">
             <Link href="/login" className="text-sm text-ph-blue hover:text-blue-700 font-semibold">
