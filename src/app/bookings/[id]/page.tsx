@@ -90,16 +90,16 @@ export default function BookingDetailPage({ params }: { params: { id: string } }
 
   useEffect(() => {
     fetchBooking()
+    const interval = setInterval(() => fetchBooking(true), 15000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchBooking(true)
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [params.id])
-
-  // Poll every 10 seconds while payment is awaiting admin verification
-  useEffect(() => {
-    if (!booking) return
-    if (booking.payment?.status !== 'pending') return
-
-    const interval = setInterval(() => fetchBooking(true), 10000)
-    return () => clearInterval(interval)
-  }, [booking?.payment?.status])
 
   const handleCancel = async () => {
     if (!confirm('Are you sure you want to cancel this booking?')) return
