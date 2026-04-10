@@ -10,6 +10,9 @@ export default function ResubmitPage() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [userId, setUserId] = useState<number | null>(null)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
   const [formData, setFormData] = useState({
     govIdType: 'national_id',
     govIdPhoto: null as File | null,
@@ -51,6 +54,10 @@ export default function ResubmitPage() {
     
     if (!formData.govIdPhoto || !formData.facePhoto) {
       toast.error('Please upload both documents')
+      return
+    }
+    if (!termsAccepted) {
+      toast.error('Please agree to the Terms of Service and Privacy Policy')
       return
     }
 
@@ -212,6 +219,26 @@ export default function ResubmitPage() {
                 </div>
               </div>
 
+              {/* Terms and Conditions */}
+              <div className="border-t pt-4">
+                <div className="flex items-start">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    className="h-4 w-4 mt-1 text-ph-blue focus:ring-ph-blue border-gray-300 rounded"
+                  />
+                  <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
+                    I agree to the{' '}
+                    <button type="button" onClick={() => setShowTermsModal(true)} className="text-ph-blue hover:underline font-medium">Terms of Service</button>{' '}
+                    and{' '}
+                    <button type="button" onClick={() => setShowPrivacyModal(true)} className="text-ph-blue hover:underline font-medium">Privacy Policy</button>
+                    . I confirm that the documents I&apos;m uploading are genuine and belong to me.
+                  </label>
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -246,6 +273,125 @@ export default function ResubmitPage() {
           </Link>
         </p>
       </div>
+
+      {/* Terms of Service Modal */}
+      {showTermsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowTermsModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 pb-4 border-b">
+              <h2 className="text-xl font-bold text-gray-900">Terms of Service</h2>
+              <button onClick={() => setShowTermsModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-4 text-sm text-gray-700">
+              <p className="text-xs text-gray-500">Last updated: April 10, 2026. By creating an OLOPSC Court Reservation account, you agree to these Terms.</p>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">1. Acceptance of Terms</h3>
+                <p>By accessing or using the OLOPSC Court Reservation system (&quot;the Platform&quot;), you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree, you may not use the Platform.</p>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">2. User Accounts</h3>
+                <p>You are responsible for maintaining the confidentiality of your account credentials. You must provide accurate, current, and complete information during registration. The administration reserves the right to suspend or terminate accounts that violate these terms.</p>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">3. Court Reservation Rules</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Reservations are subject to court availability and must be made through the Platform.</li>
+                  <li>Users must complete ID verification before making reservations.</li>
+                  <li>Reservations must be paid within the specified time frame or they will be automatically cancelled.</li>
+                  <li>Users must present their QR code at check-in for entry.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">4. Payments & Refunds</h3>
+                <p>All payments are processed via GCash QR code. Payment proofs must be uploaded for admin verification. Refund policies are determined by the administration on a case-by-case basis.</p>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">5. Cancellation Policy</h3>
+                <p>Users may cancel their reservations according to the cancellation policy set by the administration. Late cancellations or no-shows may result in penalties or restricted booking privileges.</p>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">6. Prohibited Conduct</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Misuse of the reservation system, including false bookings.</li>
+                  <li>Sharing or transferring reservations without authorization.</li>
+                  <li>Damaging court facilities or equipment.</li>
+                  <li>Any behavior that disrupts other users or the administration.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">7. Account Termination</h3>
+                <p>The administration may suspend or terminate your account at any time for violation of these Terms, without prior notice.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Policy Modal */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowPrivacyModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 pb-4 border-b">
+              <h2 className="text-xl font-bold text-gray-900">Privacy Policy & Data Protection</h2>
+              <button onClick={() => setShowPrivacyModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-4 text-sm text-gray-700">
+              <p className="text-xs text-gray-500">Last updated: April 10, 2026. OLOPSC Court Reservation is committed to protecting your personal data in compliance with applicable laws.</p>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">Applicable Laws & Standards</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><strong>Philippine Data Privacy Act of 2012 (R.A. 10173)</strong> — governs the collection, use, and protection of personal information of Philippine residents.</li>
+                  <li><strong>Payment data</strong> — The Platform does not store payment card numbers. Payments are made via GCash QR code. Payment screenshots are stored securely and deleted after verification.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">What Data We Collect</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li><strong>Account data:</strong> name, email address, phone number, profile photo.</li>
+                  <li><strong>Verification data:</strong> government ID photo, face photo, ID type.</li>
+                  <li><strong>Booking data:</strong> reservation history, court preferences, payment records.</li>
+                  <li><strong>Usage data:</strong> pages visited, features used (for platform improvement).</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">How We Use Your Data</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>To create and manage your account.</li>
+                  <li>To process court reservations and payments.</li>
+                  <li>To verify your identity for security purposes.</li>
+                  <li>To send notifications (booking confirmations, payment updates).</li>
+                  <li>To improve the Platform and user experience.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">Data Security</h3>
+                <p>We implement appropriate security measures to protect your personal data against unauthorized access, alteration, disclosure, or destruction. Passwords are encrypted and never stored in plain text.</p>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">Your Rights</h3>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Access your personal data stored on the Platform.</li>
+                  <li>Request correction of inaccurate data.</li>
+                  <li>Request deletion of your account and associated data.</li>
+                  <li>Withdraw consent for data processing at any time.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">Data Retention</h3>
+                <p>Personal data is retained only as long as necessary for the purposes outlined above. Upon account deletion, your data will be permanently removed within a reasonable time frame.</p>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">Contact</h3>
+                <p>For questions or concerns about this Privacy Policy, please contact the OLOPSC administration.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
