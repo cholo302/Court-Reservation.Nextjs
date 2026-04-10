@@ -15,7 +15,16 @@ export async function GET() {
     const [pendingBookings, pendingPayments, pendingUsers] = await Promise.all([
       prisma.booking.count({ where: { status: 'pending' } }),
       prisma.payment.count({ where: { status: { in: ['pending', 'processing'] } } }),
-      prisma.user.count({ where: { role: 'user', isIdVerified: false, isIdInvalid: false, govIdPhoto: { not: null } } }),
+      prisma.user.count({
+        where: {
+          role: 'user',
+          isIdVerified: false,
+          isIdInvalid: false,
+          isActive: true,
+          govIdPhoto: { not: null },
+          facePhoto: { not: null },
+        },
+      }),
     ])
 
     return NextResponse.json({ pendingBookings, pendingPayments, pendingUsers })
