@@ -48,8 +48,8 @@ export default function ForgotPasswordPage() {
 
       <div className="max-w-md w-full relative z-10">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 group">
-            <div className="w-14 h-14 rounded-full overflow-hidden flex-shrink-0 shadow-lg">
+          <Link href="/" className="inline-flex items-center gap-3 group">
+            <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 shadow-lg">
               <img src="/olopsc-logo.png" alt="OLOPSC" className="w-full h-full object-cover" />
             </div>
             <span className="text-2xl font-extrabold text-white tracking-tight">OLOPSC Court Reservation</span>
