@@ -30,11 +30,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check file sizes (5MB max)
-    const maxSize = 5 * 1024 * 1024
+    // Check file sizes (10MB max)
+    const maxSize = 10 * 1024 * 1024
     if (govIdPhoto.size > maxSize || facePhoto.size > maxSize) {
       return NextResponse.json(
-        { error: 'File size must be under 5MB' },
+        { error: 'File size must be under 10MB' },
         { status: 400 }
       )
     }

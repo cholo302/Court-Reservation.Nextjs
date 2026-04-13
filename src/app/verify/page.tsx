@@ -249,7 +249,7 @@ export default function VerifyPage() {
                 required
                 facingMode="environment"
                 preview={govIdPreview}
-                helpText="JPG, PNG, GIF or WebP - Max 5MB - Clear photo of your ID"
+                helpText="JPG, PNG, GIF or WebP - Max 10MB - Clear photo of your ID"
                 onCapture={(file, url) => {
                   setGovIdPhoto(file)
                   setGovIdPreview(url)
@@ -281,7 +281,7 @@ export default function VerifyPage() {
                 required
                 facingMode="user"
                 preview={facePreview}
-                helpText="JPG, PNG, GIF or WebP - Max 5MB - Clear frontal face photo"
+                helpText="JPG, PNG, GIF or WebP - Max 10MB - Clear frontal face photo"
                 onCapture={(file, url) => {
                   setFacePhoto(file)
                   setFacePreview(url)
