@@ -35,10 +35,12 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <AdminSidebar />
-      <main className="lg:ml-64 min-h-screen transition-all duration-300">
-        <div className="pt-16 lg:pt-0 px-4 lg:px-8 py-4 lg:py-8 w-full">{children}</div>
+      <main className="lg:ml-64 min-h-screen transition-all duration-300 overflow-x-hidden">
+        <div className="pt-16 lg:pt-0 px-4 lg:px-8 py-4 lg:py-8 w-full overflow-x-hidden">
+          <div className="max-w-full lg:max-w-7xl mx-auto">{children}</div>
+        </div>
       </main>
     </div>
   )

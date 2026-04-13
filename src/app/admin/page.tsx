@@ -170,14 +170,14 @@ export default function AdminDashboard() {
   const totalStatusCount = bookingsByStatus.reduce((sum, s) => sum + s.count, 0)
 
   return (
-    <div>
+    <div className="w-full overflow-x-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div className="min-w-0">
           <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Dashboard</h1>
           <p className="text-gray-500 text-sm mt-1">Overview of your court reservation system</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/admin/scanner"
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-ph-blue text-white rounded-xl text-sm font-semibold hover:bg-blue-800 transition shadow-sm"
@@ -189,8 +189,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-100 p-5 relative overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-5 relative overflow-hidden w-full">
           <div className="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-[40px] -mr-2 -mt-2 opacity-50"></div>
           <div className="relative">
             <div className="flex items-center gap-2 mb-3">
@@ -273,7 +273,7 @@ export default function AdminDashboard() {
       {/* Pending Payments Alert Banner */}
       {pendingPayments.length > 0 && (
         <Link href="/admin/payments" className="block mb-6 group">
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-4 flex items-center gap-4 hover:border-orange-300 transition">
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:border-orange-300 transition">
             <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
               <i className="fas fa-bell text-orange-600 text-sm"></i>
             </div>
@@ -296,7 +296,7 @@ export default function AdminDashboard() {
         </Link>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
         {/* Revenue Chart */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-5">
@@ -385,7 +385,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
         {/* Today's Schedule */}
         <div className="bg-white rounded-xl border border-gray-100">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -535,7 +535,7 @@ export default function AdminDashboard() {
               Manage courts
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {topCourts.map((court, i) => {
               const maxCourtRev = Math.max(...topCourts.map((c) => c.revenue), 1)
               const pct = (court.revenue / maxCourtRev) * 100
