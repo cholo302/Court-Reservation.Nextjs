@@ -53,6 +53,7 @@ export default function QRScannerPage() {
   const streamRef = useRef<MediaStream | null>(null)
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const bookingDetailsRef = useRef<HTMLDivElement>(null)
 
   // Cleanup on unmount
   useEffect(() => {
@@ -60,6 +61,15 @@ export default function QRScannerPage() {
       stopScanning()
     }
   }, [])
+
+  // Auto-scroll to booking details when result is found
+  useEffect(() => {
+    if (result && bookingDetailsRef.current) {
+      setTimeout(() => {
+        bookingDetailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 300)
+    }
+  }, [result])
 
   // Stop scanning when switching modes
   useEffect(() => {
@@ -914,7 +924,7 @@ export default function QRScannerPage() {
         </div>
 
         {/* Result Section */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div ref={bookingDetailsRef} className="bg-white rounded-xl border border-gray-100 p-6">
           <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
             <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
               <i className="fas fa-ticket text-purple-600 text-sm"></i>
