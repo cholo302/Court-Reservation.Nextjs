@@ -196,12 +196,19 @@ export default function AdminSidebar() {
     <>
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-40 flex items-center px-4">
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
-        >
-          <i className="fas fa-bars text-lg"></i>
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition text-gray-600"
+          >
+            <i className="fas fa-bars text-lg"></i>
+          </button>
+          {Object.values(counts).some(c => c > 0) && (
+            <span className="absolute top-0 right-0 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+              {Object.values(counts).reduce((a, b) => a + b, 0) > 99 ? '99+' : Object.values(counts).reduce((a, b) => a + b, 0)}
+            </span>
+          )}
+        </div>
         <Link href="/admin" className="flex items-center gap-2 ml-3">
           <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0">
             <img src="/olopsc-logo.png" alt="OLOPSC" className="w-full h-full object-cover" />
