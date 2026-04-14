@@ -2,7 +2,8 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { hash } from 'bcryptjs'
-import { sendWelcomeEmail } from '@/lib/email'
+import { sendVerificationEmail } from '@/lib/email'
+import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,7 +54,10 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await hash(password, 12)
 
-    // Create user - active but not ID verified
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex')
+
+    // Create user - not active until email is verified
     const user = await prisma.user.create({
       data: {
         name,
@@ -64,8 +68,9 @@ export async function POST(request: NextRequest) {
         phone,
         password: hashedPassword,
         role: 'user',
-        isActive: true,
+        isActive: false, // Not active until email verified
         isIdVerified: false,
+        rememberToken: verificationToken, // Temporarily store verification token
       },
     })
 
@@ -80,14 +85,14 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Send welcome email (non-blocking)
-    sendWelcomeEmail(email, firstName).catch((err) =>
-      console.error('Failed to send welcome email:', err)
+    // Send verification email (non-blocking)
+    sendVerificationEmail(email, firstName, verificationToken).catch((err) =>
+      console.error('Failed to send verification email:', err)
     )
 
     return NextResponse.json(
       {
-        message: 'Registration successful. Please login and verify your ID to start booking.',
+        message: 'Registration successful. Please check your email to verify your account.',
         userId: user.id,
       },
       { status: 201 }

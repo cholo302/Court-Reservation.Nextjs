@@ -180,7 +180,7 @@ export default function RegisterPage() {
         throw new Error(errorMessage)
       }
 
-      toast.success('Account created! Check your email for a welcome message.')
+      toast.success('Account created! Check your email to verify your address.')
       router.push('/login')
     } catch (error: any) {
       toast.error(error?.message || 'An error occurred. Please try again.')
@@ -289,7 +289,7 @@ export default function RegisterPage() {
               {!errors.email && formData.email && (
                 <p className="text-xs text-blue-500 mt-1">
                   <i className="fas fa-info-circle mr-1"></i>
-                  A welcome email will be sent to this address after registration.
+                  A verification email will be sent to this address. Please verify to activate your account.
                 </p>
               )}
             </div>
