@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 
 interface CameraCaptureProps {
   onCapture: (file: File, previewUrl: string) => void
@@ -91,7 +91,7 @@ export default function CameraCapture({
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop())
+      streamRef.current.getTracks().forEach((track: MediaStreamTrack) => track.stop())
       streamRef.current = null
     }
     setCameraReady(false)
@@ -102,7 +102,7 @@ export default function CameraCapture({
   useEffect(() => {
     return () => {
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop())
+        streamRef.current.getTracks().forEach((track: MediaStreamTrack) => track.stop())
       }
     }
   }, [])
@@ -124,7 +124,7 @@ export default function CameraCapture({
     ctx.drawImage(video, 0, 0)
 
     canvas.toBlob(
-      (blob) => {
+      (blob: Blob | null) => {
         if (!blob) return
         const file = new File([blob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' })
         const previewUrl = URL.createObjectURL(blob)
