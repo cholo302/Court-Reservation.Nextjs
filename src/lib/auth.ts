@@ -36,7 +36,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!user.isActive) {
-          throw new Error('Your account has been deactivated. Please contact admin.')
+          throw new Error('Please verify your email address before logging in. Check your inbox for the verification link.')
         }
 
         // Derive verification status
