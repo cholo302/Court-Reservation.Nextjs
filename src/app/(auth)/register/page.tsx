@@ -173,12 +173,30 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         let errorMessage = 'Registration failed'
+        let field: string | null = null
         try {
           const data = await response.json()
           errorMessage = data.error || errorMessage
+          // Map error messages to specific fields
+          if (errorMessage.toLowerCase().includes('email')) {
+            field = 'email'
+          } else if (errorMessage.toLowerCase().includes('phone')) {
+            field = 'phone'
+          }
         } catch {
           errorMessage = `Server error (${response.status}). Please try again later.`
         }
+        
+        // If error is for a specific field, show it in the form instead of toast
+        if (field) {
+          setErrors((prev) => ({ ...prev, [field]: errorMessage }))
+          setTouched((prev) => ({ ...prev, [field]: true }))
+          setCaptcha(genCaptcha())
+          setCaptchaInput('')
+          setIsLoading(false)
+          return
+        }
+        
         throw new Error(errorMessage)
       }
 
