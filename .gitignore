@@ -29,6 +29,10 @@ yarn-error.log*
 .env*.local
 .env.production
 
+# Local build artifacts from rollbacks (Windows permission issues with bracket chars)
+src/app/api/courts/[courtId]/
+src/app/api/courts/photos/
+
 # Allow example/template env files
 !.env.example
 !.env.production.example
