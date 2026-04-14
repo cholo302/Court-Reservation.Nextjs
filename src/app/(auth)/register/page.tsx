@@ -39,6 +39,8 @@ export default function RegisterPage() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [registrationSuccess, setRegistrationSuccess] = useState(false)
+  const [successEmail, setSuccessEmail] = useState('')
 
   const validateField = (name: string, value: string | boolean): string => {
     switch (name) {
@@ -180,8 +182,8 @@ export default function RegisterPage() {
         throw new Error(errorMessage)
       }
 
-      toast.success('Account created! Check your email to verify your address.')
-      router.push('/login')
+      setRegistrationSuccess(true)
+      setSuccessEmail(formData.email)
     } catch (error: any) {
       toast.error(error?.message || 'An error occurred. Please try again.')
       setCaptcha(genCaptcha())
@@ -213,7 +215,43 @@ export default function RegisterPage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {registrationSuccess ? (
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <i className="fas fa-envelope text-green-600 text-2xl"></i>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
+              <p className="text-gray-600 mb-1">
+                We&apos;ve sent a verification link to
+              </p>
+              <p className="text-gray-900 font-semibold mb-6 break-all">{successEmail}</p>
+              <p className="text-gray-600 text-sm mb-1">Please check your inbox and spam folder.</p>
+              <p className="text-gray-500 text-xs mb-6">The link will expire in 24 hours.</p>
+              
+              <button
+                onClick={() => {
+                  setRegistrationSuccess(false)
+                  setFormData({ ...formData, email: '', phone: '', password: '', passwordConfirmation: '' })
+                  setErrors({})
+                  setTouched({})
+                  setCaptcha(genCaptcha())
+                  setCaptchaInput('')
+                }}
+                className="text-ph-blue hover:text-blue-800 text-sm font-medium flex items-center gap-2 mb-8"
+              >
+                <i className="fas fa-redo"></i>
+                Try a different email
+              </button>
+
+              <Link
+                href="/login"
+                className="w-full bg-ph-blue text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition text-center"
+              >
+                Back to Sign In
+              </Link>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -443,14 +481,17 @@ export default function RegisterPage() {
               )}
             </button>
           </form>
+          )}
         </div>
 
-        <p className="mt-8 text-center text-blue-200">
-          Already have an account?{' '}
-          <Link href="/login" className="text-white font-bold hover:underline">
-            Sign in
-          </Link>
-        </p>
+        {!registrationSuccess && (
+          <p className="mt-8 text-center text-blue-200">
+            Already have an account?{' '}
+            <Link href="/login" className="text-white font-bold hover:underline">
+              Sign in
+            </Link>
+          </p>
+        )}
       </div>
 
       {/* Terms of Service Modal */}
