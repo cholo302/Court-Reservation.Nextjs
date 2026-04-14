@@ -1,11 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Increase body size limit for file uploads (10MB)
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
   images: {
     domains: ['localhost'],
     remotePatterns: [
