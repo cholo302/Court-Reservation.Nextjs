@@ -26,6 +26,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Check if token has expired (24 hours from account creation)
+    const hoursSinceCreation = (Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60)
+    if (hoursSinceCreation > 24) {
+      return NextResponse.json(
+        { error: 'Verification link has expired. Please register again.' },
+        { status: 400 }
+      )
+    }
+
     // Update user - mark email as verified and activate account
     await prisma.user.update({
       where: { id: user.id },

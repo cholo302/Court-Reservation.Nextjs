@@ -16,10 +16,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const range = searchParams.get('range') || 'month'
 
-    // Auto-clean activity logs older than 24 hours
+    // Clean activity logs older than 30 days (matching activity-logs retention)
     await prisma.activityLog.deleteMany({
       where: {
-        createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        createdAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
       },
     })
 

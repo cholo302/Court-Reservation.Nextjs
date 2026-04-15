@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     // Keep users, courts, settings intact
     await prisma.$transaction([
       prisma.payment.deleteMany(),
+      prisma.review.deleteMany(),
       prisma.notification.deleteMany(),
       prisma.activityLog.deleteMany(),
       prisma.booking.deleteMany(),

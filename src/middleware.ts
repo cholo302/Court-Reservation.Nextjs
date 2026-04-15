@@ -97,6 +97,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon\.ico|uploads|olopsc\\.jpg|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.ico).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|uploads/courts|uploads/qrcodes|olopsc\\.jpg|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.ico).*)',
   ],
 }

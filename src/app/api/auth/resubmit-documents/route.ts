@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     console.log('Saving face photo to:', facePath)
     await writeFile(facePath, faceBuffer)
 
-    // Update user with new photos (keep isIdInvalid: true until admin validates)
+    // Update user with new photos (reset isIdInvalid so status shows 'pending')
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
         govIdBirthdate: govIdBirthdate || undefined,
         govIdExpiry: govIdExpiry || undefined,
         govIdAddress: govIdAddress || undefined,
-        // isIdInvalid remains true until admin manually validates the new documents
+        isIdInvalid: false,
       },
     })
 

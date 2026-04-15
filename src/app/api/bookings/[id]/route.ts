@@ -158,7 +158,7 @@ export async function POST(
       // Enforce cancellation window (skip for admins)
       if (session.user.role !== 'admin') {
         const cancellationHours = parseInt(await getSetting('cancellationHours', '24'))
-        const bookingStart = new Date(`${booking.bookingDate.toISOString().split('T')[0]}T${booking.startTime}:00`)
+        const bookingStart = new Date(`${booking.bookingDate.toISOString().split('T')[0]}T${booking.startTime}:00+08:00`)
         const hoursUntilBooking = (bookingStart.getTime() - Date.now()) / (1000 * 60 * 60)
         if (hoursUntilBooking < cancellationHours) {
           return NextResponse.json(

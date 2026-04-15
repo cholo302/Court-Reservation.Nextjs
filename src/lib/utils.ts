@@ -1,3 +1,5 @@
+import crypto from 'crypto'
+
 // Utility functions for the Court Reservation System
 
 export const APP_NAME = process.env.APP_NAME || 'Court Reservation'
@@ -45,7 +47,7 @@ export function formatTime(time: string): string {
 export function generateBookingCode(): string {
   const prefix = 'CR'
   const date = new Date().toISOString().slice(2, 10).replace(/-/g, '')
-  const random = Math.random().toString(36).substring(2, 6).toUpperCase()
+  const random = crypto.randomBytes(3).toString('hex').toUpperCase().slice(0, 4)
   return `${prefix}${date}${random}`
 }
 
@@ -53,7 +55,7 @@ export function generateBookingCode(): string {
 export function generatePaymentReference(): string {
   const prefix = 'PAY'
   const date = new Date().toISOString().slice(2, 10).replace(/-/g, '')
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase()
+  const random = crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6)
   return `${prefix}${date}${random}`
 }
 

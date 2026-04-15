@@ -39,6 +39,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate file types
+    const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif']
+    if (!ALLOWED_MIME_TYPES.includes(govIdPhoto.type) || !ALLOWED_MIME_TYPES.includes(facePhoto.type)) {
+      return NextResponse.json(
+        { error: 'Invalid file type. Only images (JPEG, PNG, WebP, AVIF, GIF) are allowed.' },
+        { status: 400 }
+      )
+    }
+
     // Save uploaded files
     const uploadDir = join(process.cwd(), 'public', 'uploads', 'users', userId.toString())
 

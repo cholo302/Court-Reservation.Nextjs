@@ -5,11 +5,19 @@ import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
-  // Check for email query parameter (for resubmit flow - public)
+  // Regular authenticated profile fetch
+  const session = await getServerSession(authOptions)
+
+  // Check for email query parameter (for resubmit flow)
   const { searchParams } = new URL(req.url)
   const userEmail = searchParams.get('email')
   
   if (userEmail) {
+    // Only allow looking up your own email
+    if (!session || session.user.email !== userEmail) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
     try {
       const user = await prisma.user.findUnique({
         where: { email: userEmail },
@@ -26,16 +34,12 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
 
-      console.log('Profile API: User found:', user.id)
       return NextResponse.json(user, { status: 200 })
     } catch (error) {
       console.error('Profile API: Error fetching user:', error)
       return NextResponse.json({ error: 'Failed to verify email' }, { status: 500 })
     }
   }
-
-  // Regular authenticated profile fetch
-  const session = await getServerSession(authOptions)
 
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

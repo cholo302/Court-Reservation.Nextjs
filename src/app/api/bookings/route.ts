@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { generateBookingCode, RESERVATION_EXPIRY_MINUTES } from '@/lib/utils'
+import { generateBookingCode, RESERVATION_EXPIRY_MINUTES, isPeakHour, isWeekend } from '@/lib/utils'
 
 // Helper to get a setting from DB with a default fallback
 async function getSetting(key: string, defaultValue: string): Promise<string> {
@@ -277,7 +277,24 @@ export async function POST(request: NextRequest) {
     const endHour = parseInt(data.endTime.split(':')[0])
     const durationHours = endHour - startHour
 
-    const hourlyRate = Number(court.hourlyRate)
+    // Determine the effective hourly rate based on booking parameters
+    let hourlyRate = Number(court.hourlyRate)
+    if (data.isHalfCourt && court.halfCourtRate) {
+      hourlyRate = Number(court.halfCourtRate)
+    } else if (isWeekend(new Date(data.bookingDate)) && court.weekendRate) {
+      hourlyRate = Number(court.weekendRate)
+    } else if (court.peakHourRate) {
+      // Check if any booked hour falls in peak hours
+      let hasPeakHour = false
+      for (let h = startHour; h < endHour; h++) {
+        if (isPeakHour(`${String(h).padStart(2, '0')}:00`)) {
+          hasPeakHour = true
+          break
+        }
+      }
+      if (hasPeakHour) hourlyRate = Number(court.peakHourRate)
+    }
+
     const totalAmount = durationHours * hourlyRate
     const downpaymentAmount = Math.ceil(totalAmount * (court.downpaymentPercent / 100))
     const balanceAmount = totalAmount - downpaymentAmount

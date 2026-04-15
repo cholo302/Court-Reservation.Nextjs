@@ -1,6 +1,8 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // GET /api/court-types - List all court types
 export async function GET(request: NextRequest) {
@@ -16,9 +18,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/court-types - Create a new court type
+// POST /api/court-types - Create a new court type (admin only)
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session || (session.user as any)?.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { name } = await request.json()
 
     if (!name || !name.trim()) {

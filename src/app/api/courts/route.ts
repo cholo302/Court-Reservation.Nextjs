@@ -19,11 +19,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (query) {
+      const q = query.toLowerCase()
       where.OR = [
-        { name: { contains: query } },
-        { location: { contains: query } },
-        { city: { contains: query } },
-        { description: { contains: query } },
+        { name: { contains: q } },
+        { location: { contains: q } },
+        { city: { contains: q } },
+        { description: { contains: q } },
       ]
     }
 

@@ -69,13 +69,31 @@ export const authOptions: NextAuthOptions = {
       : []),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
-        token.id = user.id
-        token.role = user.role
-        token.picture = user.image
-        token.isIdVerified = (user as any).isIdVerified ?? false
-        token.verificationStatus = (user as any).verificationStatus ?? 'none'
+        // For Google OAuth, look up the Prisma user ID by email
+        if (account?.provider === 'google') {
+          const dbUser = await prisma.user.findUnique({ where: { email: user.email! } })
+          if (dbUser) {
+            token.id = dbUser.id.toString()
+            token.role = dbUser.role
+            token.picture = dbUser.profileImage || dbUser.facePhoto || user.image
+            token.isIdVerified = dbUser.isIdVerified
+            token.verificationStatus = dbUser.isIdVerified
+              ? 'verified'
+              : dbUser.isIdInvalid
+              ? 'rejected'
+              : dbUser.govIdPhoto
+              ? 'pending'
+              : 'none'
+          }
+        } else {
+          token.id = user.id
+          token.role = user.role
+          token.picture = user.image
+          token.isIdVerified = (user as any).isIdVerified ?? false
+          token.verificationStatus = (user as any).verificationStatus ?? 'none'
+        }
       }
       
       // Check if user is still active and refresh verification status
@@ -127,7 +145,22 @@ export const authOptions: NextAuthOptions = {
           where: { email: user.email! },
         })
 
-        if (!existingUser) {
+        if (existingUser) {
+          // Update existing user with Google provider info if not already set
+          if (!existingUser.provider) {
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: {
+                provider: 'google',
+                providerId: account.providerAccountId,
+                profileImage: existingUser.profileImage || user.image,
+              },
+            })
+          }
+          // Check if user is blacklisted or inactive
+          if (existingUser.isBlacklisted) return false
+          if (!existingUser.isActive) return false
+        } else {
           // Create new user from Google
           await prisma.user.create({
             data: {
@@ -138,6 +171,7 @@ export const authOptions: NextAuthOptions = {
               providerId: account.providerAccountId,
               profileImage: user.image,
               isActive: true,
+              emailVerifiedAt: new Date(),
               isIdVerified: false,
             },
           })
