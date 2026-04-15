@@ -1,0 +1,20 @@
+{
+  "files.exclude": {
+    "src/app/api/courts/photos": true,
+    "src/app/api/courts/upload-photos": true,
+    "src/app/api/courts/upload-thumbnail": true,
+    "src/app/api/courts/[courtId]": true,
+    "src/app/api/courts/[id]/photos": true,
+    "src/app/api/courts/[id]/price": true,
+    "src/app/api/courts/[id]/slots": true
+  },
+  "search.exclude": {
+    "src/app/api/courts/photos": true,
+    "src/app/api/courts/upload-photos": true,
+    "src/app/api/courts/upload-thumbnail": true,
+    "src/app/api/courts/[courtId]": true,
+    "src/app/api/courts/[id]/photos": true,
+    "src/app/api/courts/[id]/price": true,
+    "src/app/api/courts/[id]/slots": true
+  }
+}
