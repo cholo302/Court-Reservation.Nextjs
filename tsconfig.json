@@ -22,5 +22,14 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "src/app/api/courts/photos",
+    "src/app/api/courts/upload-photos",
+    "src/app/api/courts/upload-thumbnail",
+    "src/app/api/courts/[courtId]",
+    "src/app/api/courts/[id]/photos",
+    "src/app/api/courts/[id]/price",
+    "src/app/api/courts/[id]/slots"
+  ]
 }
