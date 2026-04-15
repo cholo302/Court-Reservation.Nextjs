@@ -28,7 +28,6 @@ export default function ForgotPasswordPage() {
         return
       }
 
-      toast.success('Check your email for the reset link!')
       setEmailSent(true)
     } catch {
       toast.error('Something went wrong. Please try again.')
@@ -38,7 +37,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-ph-blue to-blue-800"></div>
       <div className="absolute inset-0 opacity-10">
@@ -47,83 +46,94 @@ export default function ForgotPasswordPage() {
       </div>
 
       <div className="max-w-md w-full relative z-10">
+        {/* Title */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-3 group">
-            <div className="w-20 h-20 rounded-full overflow-hidden flex-shrink-0 shadow-lg">
-              <img src="/olopsc-logo.png" alt="OLOPSC" className="w-full h-full object-cover" />
-            </div>
-            <span className="text-2xl font-extrabold text-white tracking-tight">OLOPSC Court Reservation</span>
-          </Link>
-          <h2 className="mt-8 text-3xl font-extrabold text-white">Forgot Password</h2>
-          <p className="mt-2 text-blue-200">Enter your email to reset your password</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-white">Forgot Password</h1>
+          <p className="mt-2 text-blue-200 text-sm">Enter your email to reset your password</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          {emailSent ? (
-            <div className="text-center py-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        {emailSent ? (
+          /* Success State */
+          <div className="bg-white rounded-3xl shadow-2xl p-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
                 <i className="fas fa-envelope-circle-check text-green-500 text-2xl"></i>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Check Your Email</h3>
-              <p className="text-gray-500 text-sm mb-6">
-                We&apos;ve sent a password reset link to <strong>{email}</strong>. Please check your inbox and spam folder.
+              <h2 className="text-xl font-bold text-gray-900 mb-3">Check Your Email</h2>
+              <p className="text-gray-600 text-sm mb-1">
+                If that email is registered, a password reset link has been sent.
               </p>
-              <p className="text-gray-400 text-xs mb-4">The link will expire in 30 minutes.</p>
+              <p className="text-gray-500 text-sm mb-6">
+                Please check your inbox and spam folder.
+              </p>
+              <p className="text-green-600 text-xs mb-6">The link will expire in 30 minutes.</p>
+
               <button
                 onClick={() => { setEmailSent(false); setEmail('') }}
-                className="text-sm text-ph-blue hover:text-blue-700 font-semibold"
+                className="text-ph-blue hover:text-blue-700 font-semibold text-sm mb-4 block mx-auto"
               >
-                <i className="fas fa-redo mr-1 text-xs"></i>
+                <i className="fas fa-rotate-right mr-1.5"></i>
                 Try a different email
               </button>
-            </div>
-          ) : (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <i className="fas fa-envelope text-gray-400"></i>
-                </div>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="block w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ph-blue focus:border-transparent focus:bg-white transition-colors text-sm"
-                  placeholder="juan@example.com"
-                />
-              </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-ph-blue to-blue-600 text-white py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
-            >
-              {isLoading ? (
-                <>
-                  <BallSpinner className="mr-2" /> Sending...
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-paper-plane mr-2"></i> Send Reset Link
-                </>
-              )}
-            </button>
-          </form>
-          )}
-
-          <div className="mt-6 text-center">
-            <Link href="/login" className="text-sm text-ph-blue hover:text-blue-700 font-semibold">
-              <i className="fas fa-arrow-left mr-1 text-xs"></i>
-              Back to Sign In
-            </Link>
+              <Link
+                href="/login"
+                className="text-gray-500 hover:text-gray-700 text-sm font-medium block"
+              >
+                <i className="fas fa-arrow-left mr-1.5"></i>
+                Back to Sign In
+              </Link>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Email Form */
+          <div className="bg-white rounded-3xl shadow-2xl p-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i className="fas fa-envelope text-gray-400"></i>
+                  </div>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="block w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ph-blue focus:border-transparent focus:bg-white transition-colors text-sm"
+                    placeholder="juan@example.com"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-ph-blue to-blue-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]"
+              >
+                {isLoading ? (
+                  <>
+                    <BallSpinner className="mr-2" /> Sending...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-paper-plane mr-2"></i> Send Reset Link
+                  </>
+                )}
+              </button>
+
+              <div className="text-center">
+                <Link href="/login" className="text-sm text-ph-blue hover:text-blue-700 font-semibold">
+                  <i className="fas fa-arrow-left mr-1.5"></i>
+                  Back to Sign In
+                </Link>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   )
