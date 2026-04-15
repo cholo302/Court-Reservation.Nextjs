@@ -10,8 +10,13 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const courtId = parseInt(params.id)
+    if (isNaN(courtId)) {
+      return NextResponse.json({ error: 'Invalid court ID' }, { status: 400 })
+    }
+
     const court = await prisma.court.findUnique({
-      where: { id: parseInt(params.id) },
+      where: { id: courtId },
       include: {
         courtType: true,
       },
@@ -55,8 +60,17 @@ export async function PUT(
 
     const data = await request.json()
 
+    const putCourtId = parseInt(params.id)
+    if (isNaN(putCourtId)) {
+      return NextResponse.json({ error: 'Invalid court ID' }, { status: 400 })
+    }
+
+    if (data.hourlyRate !== undefined && data.hourlyRate < 0) {
+      return NextResponse.json({ error: 'Hourly rate cannot be negative' }, { status: 400 })
+    }
+
     const court = await prisma.court.update({
-      where: { id: parseInt(params.id) },
+      where: { id: putCourtId },
       data: {
         courtTypeId: data.courtTypeId,
         name: data.name,
@@ -101,6 +115,15 @@ export async function PATCH(
 
     const data = await request.json()
 
+    const patchCourtId = parseInt(params.id)
+    if (isNaN(patchCourtId)) {
+      return NextResponse.json({ error: 'Invalid court ID' }, { status: 400 })
+    }
+
+    if (data.hourlyRate !== undefined && data.hourlyRate < 0) {
+      return NextResponse.json({ error: 'Hourly rate cannot be negative' }, { status: 400 })
+    }
+
     // Build update data dynamically based on provided fields
     const updateData: any = {}
     
@@ -125,7 +148,7 @@ export async function PATCH(
     if (data.isActive !== undefined) updateData.isActive = data.isActive
 
     const court = await prisma.court.update({
-      where: { id: parseInt(params.id) },
+      where: { id: patchCourtId },
       data: updateData,
     })
 

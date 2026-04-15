@@ -18,7 +18,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email.toLowerCase().trim() },
         })
 
         if (!user) {
@@ -154,5 +154,5 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-change-in-production',
+  secret: process.env.NEXTAUTH_SECRET || (() => { if (process.env.NODE_ENV === 'production') throw new Error('NEXTAUTH_SECRET must be set in production'); return 'dev-only-secret-not-for-production'; })(),
 }

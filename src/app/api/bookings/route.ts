@@ -165,6 +165,14 @@ export async function POST(request: NextRequest) {
     const bookingStartHour = parseInt(await getSetting('bookingStartHour', '6'))
     const bookingEndHour = parseInt(await getSetting('bookingEndHour', '22'))
 
+    // Validate time format
+    if (!/^\d{2}:\d{2}$/.test(data.startTime) || !/^\d{2}:\d{2}$/.test(data.endTime)) {
+      return NextResponse.json(
+        { error: 'Invalid time format. Use HH:mm' },
+        { status: 400 }
+      )
+    }
+
     // Validate start/end within operating hours
     const reqStartHour = parseInt(data.startTime.split(':')[0])
     const reqEndHour = parseInt(data.endTime.split(':')[0])
