@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import path from 'path'
+import fs from 'fs'
 
 // GET /api/courts/[id] - Get a single court
 export async function GET(
@@ -19,6 +21,7 @@ export async function GET(
       where: { id: courtId },
       include: {
         courtType: true,
+        photos: { orderBy: { sortOrder: 'asc' } },
       },
     })
 
@@ -37,6 +40,7 @@ export async function GET(
       courtTypeSlug: court.courtType?.slug,
       courtTypeIcon: court.courtType?.icon,
       amenities: court.amenities ? JSON.parse(court.amenities) : [],
+      photos: court.photos || [],
     }
 
     return NextResponse.json({ court: courtWithDetails })
@@ -194,10 +198,20 @@ export async function DELETE(
       // 5. Delete court schedules
       await tx.courtSchedule.deleteMany({ where: { courtId } })
 
-      // 6. Delete direct court reviews (if any without bookingId)
+      // 6. Delete court photos from disk and database
+      const photos = await tx.courtPhoto.findMany({ where: { courtId } })
+      for (const photo of photos) {
+        const filePath = path.join(process.cwd(), 'public', photo.url)
+        if (fs.existsSync(filePath)) {
+          try { fs.unlinkSync(filePath) } catch {}
+        }
+      }
+      await tx.courtPhoto.deleteMany({ where: { courtId } })
+
+      // 7. Delete direct court reviews (if any without bookingId)
       await tx.review.deleteMany({ where: { courtId } })
 
-      // 7. Finally delete the court
+      // 8. Finally delete the court
       await tx.court.delete({ where: { id: courtId } })
     })
 

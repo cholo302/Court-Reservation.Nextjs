@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         courtType: true,
+        photos: { orderBy: { sortOrder: 'asc' } },
       },
       orderBy: { name: 'asc' },
     })
@@ -62,6 +63,7 @@ export async function GET(request: NextRequest) {
       courtTypeName: court.courtType?.name,
       courtTypeSlug: court.courtType?.slug,
       amenities: court.amenities ? JSON.parse(court.amenities) : [],
+      photos: court.photos || [],
     }))
 
     return NextResponse.json({ courts: courtsWithType })

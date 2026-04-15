@@ -17,6 +17,8 @@ export default function CreateCourtPage() {
   const [loading, setLoading] = useState(false)
   const [courtTypes, setCourtTypes] = useState<CourtType[]>([])
   const [thumbnailUploading, setThumbnailUploading] = useState(false)
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([])
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([])
   const [form, setForm] = useState({
     name: '',
     courtTypeId: '',
@@ -73,6 +75,24 @@ export default function CreateCourtPage() {
     }
   }
 
+  const handleGalleryFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (galleryFiles.length + files.length > 10) {
+      toast.error('Maximum 10 gallery photos')
+      return
+    }
+    const newFiles = [...galleryFiles, ...files]
+    setGalleryFiles(newFiles)
+    const newPreviews = files.map((f) => URL.createObjectURL(f))
+    setGalleryPreviews((prev) => [...prev, ...newPreviews])
+  }
+
+  const removeGalleryFile = (index: number) => {
+    URL.revokeObjectURL(galleryPreviews[index])
+    setGalleryFiles((prev) => prev.filter((_, i) => i !== index))
+    setGalleryPreviews((prev) => prev.filter((_, i) => i !== index))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -123,6 +143,19 @@ export default function CreateCourtPage() {
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Failed to create court')
+      }
+
+      const courtData = await response.json()
+
+      // Upload gallery photos if any
+      if (galleryFiles.length > 0) {
+        const fd = new FormData()
+        galleryFiles.forEach((file) => fd.append('photos', file))
+        try {
+          await fetch(`/api/courts/${courtData.id}/photos`, { method: 'POST', body: fd })
+        } catch {
+          toast.error('Some gallery photos failed to upload')
+        }
       }
 
       toast.success('Court created successfully')
@@ -253,6 +286,41 @@ export default function CreateCourtPage() {
                   >
                     <i className="fas fa-times"></i>
                   </button>
+                </div>
+              )}
+            </div>
+
+            {/* Gallery Photos */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Gallery Photos <span className="text-gray-400 text-xs">(up to 10)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer w-fit mb-2">
+                <span className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition flex items-center gap-1.5">
+                  <i className="fas fa-images"></i> Add Photos
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleGalleryFilesChange}
+                />
+              </label>
+              {galleryPreviews.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mt-2">
+                  {galleryPreviews.map((preview, i) => (
+                    <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                      <img src={preview} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryFile(i)}
+                        className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-black/70"
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

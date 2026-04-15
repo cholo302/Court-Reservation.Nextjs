@@ -21,6 +21,10 @@ export default function EditCourtPage() {
   const [saving, setSaving] = useState(false)
   const [courtTypes, setCourtTypes] = useState<CourtType[]>([])
   const [thumbnailUploading, setThumbnailUploading] = useState(false)
+  const [photos, setPhotos] = useState<{ id: number; url: string; sortOrder: number }[]>([])
+  const [newGalleryFiles, setNewGalleryFiles] = useState<File[]>([])
+  const [newGalleryPreviews, setNewGalleryPreviews] = useState<string[]>([])
+  const [photosUploading, setPhotosUploading] = useState(false)
   
   const [form, setForm] = useState({
     name: '',
@@ -66,6 +70,7 @@ export default function EditCourtPage() {
             downpaymentPercent: court.downpaymentPercent?.toString() || '50',
             isActive: court.isActive ?? true,
           })
+          setPhotos(court.photos || [])
         }
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -102,6 +107,60 @@ export default function EditCourtPage() {
       toast.error(err?.message || 'Upload failed')
     } finally {
       setThumbnailUploading(false)
+    }
+  }
+
+  const handleNewGalleryFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (photos.length + newGalleryFiles.length + files.length > 10) {
+      toast.error('Maximum 10 gallery photos')
+      return
+    }
+    setNewGalleryFiles((prev) => [...prev, ...files])
+    const previews = files.map((f) => URL.createObjectURL(f))
+    setNewGalleryPreviews((prev) => [...prev, ...previews])
+  }
+
+  const removeNewGalleryFile = (index: number) => {
+    URL.revokeObjectURL(newGalleryPreviews[index])
+    setNewGalleryFiles((prev) => prev.filter((_, i) => i !== index))
+    setNewGalleryPreviews((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const handleDeletePhoto = async (photoId: number) => {
+    if (!confirm('Delete this photo?')) return
+    try {
+      const res = await fetch(`/api/courts/${courtId}/photos`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoId }),
+      })
+      if (!res.ok) throw new Error('Failed to delete')
+      setPhotos((prev) => prev.filter((p) => p.id !== photoId))
+      toast.success('Photo deleted')
+    } catch {
+      toast.error('Failed to delete photo')
+    }
+  }
+
+  const uploadNewPhotos = async () => {
+    if (newGalleryFiles.length === 0) return
+    setPhotosUploading(true)
+    try {
+      const fd = new FormData()
+      newGalleryFiles.forEach((file) => fd.append('photos', file))
+      const res = await fetch(`/api/courts/${courtId}/photos`, { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Upload failed')
+      setPhotos((prev) => [...prev, ...data.photos])
+      setNewGalleryFiles([])
+      newGalleryPreviews.forEach((p) => URL.revokeObjectURL(p))
+      setNewGalleryPreviews([])
+      toast.success(`${data.count} photo(s) uploaded`)
+    } catch (err: any) {
+      toast.error(err?.message || 'Upload failed')
+    } finally {
+      setPhotosUploading(false)
     }
   }
 
@@ -156,6 +215,11 @@ export default function EditCourtPage() {
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Failed to update court')
+      }
+
+      // Upload new gallery photos if any
+      if (newGalleryFiles.length > 0) {
+        await uploadNewPhotos()
       }
 
       toast.success('Court updated successfully')
@@ -293,6 +357,75 @@ export default function EditCourtPage() {
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Gallery Photos */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gallery Photos <span className="text-gray-400 text-xs">({photos.length}/10)</span>
+              </label>
+
+              {/* Existing photos */}
+              {photos.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-3">
+                  {photos.map((photo) => (
+                    <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50 group">
+                      <img src={photo.url} alt="Court photo" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePhoto(photo.id)}
+                        className="absolute top-1 right-1 bg-red-500/80 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <i className="fas fa-trash text-[10px]"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* New photos to upload */}
+              {newGalleryPreviews.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-3">
+                  {newGalleryPreviews.map((preview, i) => (
+                    <div key={`new-${i}`} className="relative aspect-square rounded-lg overflow-hidden border-2 border-dashed border-green-300 bg-green-50">
+                      <img src={preview} alt={`New ${i + 1}`} className="w-full h-full object-cover" />
+                      <span className="absolute bottom-0 left-0 right-0 bg-green-600/80 text-white text-[10px] text-center py-0.5">New</span>
+                      <button
+                        type="button"
+                        onClick={() => removeNewGalleryFile(i)}
+                        className="absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-black/70"
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 cursor-pointer w-fit">
+                  <span className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition flex items-center gap-1.5">
+                    <i className="fas fa-images"></i> Add Photos
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleNewGalleryFiles}
+                  />
+                </label>
+                {newGalleryFiles.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={uploadNewPhotos}
+                    disabled={photosUploading}
+                    className="px-3 py-1.5 bg-ph-blue text-white text-sm rounded-lg hover:bg-blue-700 transition flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {photosUploading ? <><BallSpinner /> Uploading...</> : <><i className="fas fa-upload"></i> Upload {newGalleryFiles.length}</>}
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="md:col-span-2">

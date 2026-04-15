@@ -95,8 +95,22 @@ model Court {
   bookings  Booking[]
   reviews   Review[]
   schedules CourtSchedule[]
+  photos    CourtPhoto[]
 
   @@map("courts")
+}
+
+model CourtPhoto {
+  id        Int      @id @default(autoincrement())
+  courtId   Int      @map("court_id")
+  url       String
+  caption   String?
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  court Court @relation(fields: [courtId], references: [id], onDelete: Cascade)
+
+  @@map("court_photos")
 }
 
 model CourtSchedule {

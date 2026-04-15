@@ -27,6 +27,7 @@ interface Court {
   capacity: number | null
   amenities: string[]
   rules: string | null
+  photos: { id: number; url: string; sortOrder: number }[]
   courtType: {
     name: string
   }
@@ -51,6 +52,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([])
   const [isClosed, setIsClosed] = useState(false)
   const [closedReason, setClosedReason] = useState('')
+  const [activePhoto, setActivePhoto] = useState(0)
 
   const today = new Date().toISOString().split('T')[0]
   const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -217,27 +219,90 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Court Image */}
+          {/* Court Image Gallery */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="h-80 bg-gradient-to-br from-ph-blue to-blue-700 relative">
-              {court.thumbnail ? (
-                <img
-                  src={court.thumbnail}
-                  alt={court.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <i className="fas fa-basketball-ball text-white/30 text-8xl"></i>
-                </div>
-              )}
+              {(() => {
+                const allImages = court.photos?.length > 0
+                  ? court.photos.map((p) => p.url)
+                  : court.thumbnail
+                  ? [court.thumbnail]
+                  : []
+
+                if (allImages.length === 0) {
+                  return (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <i className="fas fa-basketball-ball text-white/30 text-8xl"></i>
+                    </div>
+                  )
+                }
+
+                return (
+                  <>
+                    <img
+                      src={allImages[activePhoto] || allImages[0]}
+                      alt={court.name}
+                      className="w-full h-full object-cover"
+                    />
+                    {allImages.length > 1 && (
+                      <>
+                        <button
+                          onClick={() => setActivePhoto((p) => (p - 1 + allImages.length) % allImages.length)}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center transition"
+                        >
+                          <i className="fas fa-chevron-left text-sm"></i>
+                        </button>
+                        <button
+                          onClick={() => setActivePhoto((p) => (p + 1) % allImages.length)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center transition"
+                        >
+                          <i className="fas fa-chevron-right text-sm"></i>
+                        </button>
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                          {allImages.map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setActivePhoto(i)}
+                              className={`w-2 h-2 rounded-full transition ${i === activePhoto ? 'bg-white scale-125' : 'bg-white/50'}`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )
+              })()}
 
               <div className="absolute top-4 left-4 flex space-x-2">
                 <span className="bg-white/90 text-ph-blue text-sm font-semibold px-3 py-1 rounded-full">
                   {court.courtType?.name || 'Court'}
                 </span>
               </div>
+              {court.photos?.length > 1 && (
+                <div className="absolute top-4 right-4">
+                  <span className="bg-black/50 text-white text-xs px-2.5 py-1 rounded-full">
+                    {activePhoto + 1} / {court.photos.length}
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* Thumbnail strip */}
+            {court.photos?.length > 1 && (
+              <div className="flex gap-1 p-2 bg-gray-50 overflow-x-auto">
+                {court.photos.map((photo, i) => (
+                  <button
+                    key={photo.id}
+                    onClick={() => setActivePhoto(i)}
+                    className={`shrink-0 w-16 h-12 rounded-md overflow-hidden border-2 transition ${
+                      i === activePhoto ? 'border-ph-blue' : 'border-transparent opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Court Info */}

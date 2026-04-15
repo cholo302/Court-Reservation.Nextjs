@@ -17,6 +17,7 @@ interface Court {
   rating: number
   capacity: number | null
   amenities: string[]
+  photos: { id: number; url: string }[]
   courtType: {
     name: string
   }
@@ -139,9 +140,9 @@ function CourtsContent() {
               className="bg-white rounded-2xl border border-gray-100 overflow-hidden card-hover group block"
             >
               <div className="relative h-48 bg-gradient-to-br from-ph-blue to-blue-700 overflow-hidden">
-                {court.thumbnail ? (
+                {(court.thumbnail || court.photos?.[0]?.url) ? (
                   <img
-                    src={court.thumbnail}
+                    src={court.thumbnail || court.photos[0].url}
                     alt={court.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
