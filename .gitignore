@@ -50,3 +50,6 @@ prisma/*.sqlite-journal
 
 # platform-specific SWC binaries (auto-installed by npm)
 @next/swc-*
+# Database
+prisma/court_reservation.sqlite
+prisma/court_reservation.sqlite-journal
