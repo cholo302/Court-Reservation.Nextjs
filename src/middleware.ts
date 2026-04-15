@@ -58,6 +58,7 @@ export default withAuth(
           '/courts',
           '/forgot-password',
           '/reset-password',
+          '/verify-email',
         ]
 
         // Check if it's a public route or public API
