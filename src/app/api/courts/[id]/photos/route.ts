@@ -9,12 +9,12 @@ import sharp from 'sharp'
 
 const ALLOWED_MIME_TYPES = [
   'image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 
-  'image/heic', 'image/heif',
   // Mobile browsers sometimes report these incorrectly
   'application/octet-stream'
 ]
-const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif', 'heic', 'heif']
-const HEIC_EXTENSIONS = ['heic', 'heif']
+// HEIC/HEIF not supported - users need to convert on their device first
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif']
+const REJECTED_EXTENSIONS = ['heic', 'heif']
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB (increased for mobile photos)
 const MAX_PHOTOS_PER_COURT = 10
 
@@ -110,30 +110,27 @@ export async function POST(
         continue
       }
 
-      // Convert HEIC/HEIF to JPEG since browsers can't display them
-      const isHeic = HEIC_EXTENSIONS.includes(ext)
-      const outputExt = isHeic ? 'jpg' : (ALLOWED_EXTENSIONS.includes(ext) ? ext : 'jpg')
+      // Reject HEIC/HEIF - not supported on server, user needs to convert first
+      if (REJECTED_EXTENSIONS.includes(ext)) {
+        errors.push(`${file.name}: HEIC/HEIF format not supported. Please convert to JPG on your phone (iPhone: Settings > Camera > Formats > Most Compatible)`)
+        continue
+      }
+
+      const outputExt = ALLOWED_EXTENSIONS.includes(ext) ? ext : 'jpg'
       const uniqueName = `court-${courtId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${outputExt}`
       const filePath = path.join(uploadsDir, uniqueName)
 
       try {
         const buffer = Buffer.from(await file.arrayBuffer())
         
-        if (isHeic) {
-          // Convert HEIC to JPEG using sharp
+        // Optimize images with sharp
+        try {
           await sharp(buffer)
             .jpeg({ quality: 85 })
             .toFile(filePath)
-        } else {
-          // For other formats, optionally optimize with sharp
-          try {
-            await sharp(buffer)
-              .jpeg({ quality: 85 })
-              .toFile(filePath)
-          } catch {
-            // If sharp fails (e.g., unsupported format), save raw
-            fs.writeFileSync(filePath, buffer)
-          }
+        } catch {
+          // If sharp fails, save raw file
+          fs.writeFileSync(filePath, buffer)
         }
 
         const url = `/uploads/courts/${uniqueName}`
@@ -149,10 +146,7 @@ export async function POST(
         uploaded.push(photo)
       } catch (fileError: any) {
         console.error(`Error saving file ${file.name}:`, fileError)
-        const errMsg = isHeic 
-          ? `${file.name}: HEIC conversion failed - try converting to JPG first`
-          : `${file.name}: Failed to save (${fileError?.message || 'unknown error'})`
-        errors.push(errMsg)
+        errors.push(`${file.name}: Failed to save (${fileError?.message || 'unknown error'})`)
       }
     }
 
