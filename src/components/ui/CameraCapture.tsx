@@ -23,7 +23,7 @@ export default function CameraCapture({
   label,
   required = false,
   accept = 'image/jpeg,image/png,image/gif,image/webp',
-  helpText = 'JPG, PNG, GIF or WebP - Max 5MB',
+  helpText = 'JPG, PNG, GIF or WebP - Max 10MB',
   facingMode = 'environment',
   id,
 }: CameraCaptureProps) {
@@ -127,9 +127,20 @@ export default function CameraCapture({
       (blob) => {
         if (!blob) return
         const file = new File([blob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' })
-        const previewUrl = URL.createObjectURL(blob)
-        onCapture(file, previewUrl)
-        stopCamera()
+        // Use FileReader for better cross-browser compatibility (Safari)
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const previewUrl = reader.result as string
+          onCapture(file, previewUrl)
+          stopCamera()
+        }
+        reader.onerror = () => {
+          // Fallback to URL.createObjectURL
+          const previewUrl = URL.createObjectURL(blob)
+          onCapture(file, previewUrl)
+          stopCamera()
+        }
+        reader.readAsDataURL(blob)
       },
       'image/jpeg',
       0.92
@@ -144,16 +155,26 @@ export default function CameraCapture({
   }
 
   const processFile = (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB')
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size must be less than 10MB')
       return
     }
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file')
       return
     }
-    const previewUrl = URL.createObjectURL(file)
-    onFileSelect(file, previewUrl)
+    // Use FileReader for better cross-browser compatibility (Safari)
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const previewUrl = reader.result as string
+      onFileSelect(file, previewUrl)
+    }
+    reader.onerror = () => {
+      // Fallback to URL.createObjectURL
+      const previewUrl = URL.createObjectURL(file)
+      onFileSelect(file, previewUrl)
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleDragEnter = (e: React.DragEvent) => {

@@ -9,6 +9,12 @@ const nextConfig = {
       },
     ],
   },
+  // Increase body size limit for file uploads (15MB)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '15mb',
+    },
+  },
   // Serve dynamically uploaded files via API route
   // In production, Next.js only serves public/ files that existed at build time.
   // Files uploaded after the build (user photos, payment proofs) need this rewrite
