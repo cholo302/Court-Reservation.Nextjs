@@ -207,19 +207,19 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Back button */}
       <button
         onClick={() => router.back()}
-        className="inline-flex items-center gap-2 text-ph-blue hover:text-blue-700 font-medium mb-8 transition-colors"
+        className="inline-flex items-center gap-2 text-ph-blue hover:text-blue-700 font-medium mb-6 sm:mb-8 transition-colors"
       >
         <i className="fas fa-arrow-left"></i>
         Back
       </button>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Court Image Gallery */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             {(() => {
@@ -316,20 +316,20 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
           {/* Court Info */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Name + location header strip */}
-            <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-extrabold text-gray-900 leading-tight">{court.name}</h1>
+            <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 border-b border-gray-100">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 leading-tight">{court.name}</h1>
                   {(court.location || court.city) && (
                     <div className="flex items-start gap-1.5 mt-2 text-sm text-gray-500">
                       <i className="fas fa-location-dot text-yellow-500 mt-0.5 shrink-0"></i>
-                      <span className="leading-snug">
+                      <span className="leading-snug break-words">
                         {[court.location, court.barangay, court.city].filter(Boolean).join(', ')}
                       </span>
                     </div>
                   )}
                 </div>
-                <span className="shrink-0 bg-blue-50 text-ph-blue text-xs font-semibold px-3 py-1.5 rounded-full border border-blue-100">
+                <span className="shrink-0 self-start bg-blue-50 text-ph-blue text-xs font-semibold px-3 py-1.5 rounded-full border border-blue-100">
                   {court.courtType?.name || 'Court'}
                 </span>
               </div>
@@ -337,7 +337,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
 
             {/* Description */}
             {court.description && (
-              <div className="px-6 py-4 border-b border-gray-100">
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-100">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">About</h3>
                 <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">{court.description}</p>
               </div>
@@ -345,7 +345,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
 
             {/* Rules */}
             {court.rules && (
-              <div className="px-6 py-4">
+              <div className="px-4 sm:px-6 py-4">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
                     <i className="fas fa-triangle-exclamation text-amber-500 text-xs"></i>
@@ -356,7 +356,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                   {court.rules.split('\n').filter(line => line.trim()).map((line, i) => (
                     <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
                       <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
-                      <span>{line.trim()}</span>
+                      <span className="break-words">{line.trim()}</span>
                     </div>
                   ))}
                 </div>
@@ -365,7 +365,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
           </div>
 
           {/* Schedule/Availability */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
             <h3 className="font-semibold text-gray-900 mb-4">
               <i className="fas fa-calendar-alt mr-2 text-ph-blue"></i>Availability
             </h3>
@@ -380,11 +380,11 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                 onChange={(e) => setSelectedDate(e.target.value)}
                 min={today}
                 max={maxDate}
-                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-ph-blue focus:border-transparent"
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-ph-blue focus:border-transparent w-full sm:w-auto"
               />
             </div>
 
-            <div id="time-slots" className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-2">
+            <div id="time-slots" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-2">
               {isClosed ? (
                 <div className="col-span-full text-center text-gray-500 py-8">
                   <i className="fas fa-ban text-4xl mb-2"></i>
@@ -396,16 +396,16 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                   <div
                     key={slot.start}
                     onClick={() => handleSlotClick(slot)}
-                    className={`time-slot text-center py-3 sm:py-2 px-2 sm:px-1 rounded-lg cursor-pointer transition touch-manipulation
+                    className={`time-slot text-center py-2.5 px-1 rounded-lg cursor-pointer transition touch-manipulation min-w-0
                       ${
                         isSlotSelected(slot)
-                          ? 'bg-ph-blue text-white ring-2 ring-ph-blue ring-offset-2'
+                          ? 'bg-ph-blue text-white ring-2 ring-ph-blue ring-offset-1'
                           : slot.available
                           ? 'bg-green-100 hover:bg-green-200 active:bg-green-300 text-green-800'
                           : 'bg-red-100 text-red-400 cursor-not-allowed'
                       }`}
                   >
-                    <div className="text-sm sm:text-sm font-medium">{formatTime(slot.start)}</div>
+                    <div className="text-xs sm:text-sm font-medium whitespace-nowrap">{formatTime(slot.start)}</div>
                   </div>
                 ))
               ) : (
@@ -430,7 +430,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
         </div>
 
         {/* Sidebar - Booking Card */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 lg:sticky lg:top-24">
             <div className="text-center mb-4">
               <span className="text-2xl sm:text-3xl font-bold text-ph-blue">
