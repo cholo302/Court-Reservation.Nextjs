@@ -117,12 +117,17 @@ export default function EditCourtPage() {
       return
     }
     setNewGalleryFiles((prev) => [...prev, ...files])
-    const previews = files.map((f) => URL.createObjectURL(f))
-    setNewGalleryPreviews((prev) => [...prev, ...previews])
+    // Use FileReader for better cross-browser compatibility (Safari)
+    files.forEach((file) => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setNewGalleryPreviews((prev) => [...prev, reader.result as string])
+      }
+      reader.readAsDataURL(file)
+    })
   }
 
   const removeNewGalleryFile = (index: number) => {
-    URL.revokeObjectURL(newGalleryPreviews[index])
     setNewGalleryFiles((prev) => prev.filter((_, i) => i !== index))
     setNewGalleryPreviews((prev) => prev.filter((_, i) => i !== index))
   }

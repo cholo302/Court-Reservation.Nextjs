@@ -108,7 +108,12 @@ export default function PayBookingPage({ params }: { params: { id: string } }) {
     const file = e.target.files?.[0]
     if (file) {
       setProofFile(file)
-      setProofPreview(URL.createObjectURL(file))
+      // Use FileReader for better cross-browser compatibility (Safari)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setProofPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
