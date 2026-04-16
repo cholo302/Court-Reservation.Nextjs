@@ -163,8 +163,13 @@ export default function EditCourtPage() {
           const data = await res.json()
           setPhotos((prev) => [...prev, ...data.photos])
           uploaded++
-        } catch {
+          // Show any per-file errors from the server
+          if (data.errors && data.errors.length > 0) {
+            data.errors.forEach((err: string) => toast.error(err))
+          }
+        } catch (err: any) {
           failed++
+          toast.error(`${file.name}: ${err?.message || 'Upload failed'}`)
         }
       }
       setNewGalleryFiles([])

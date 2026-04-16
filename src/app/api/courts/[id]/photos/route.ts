@@ -6,8 +6,14 @@ import prisma from '@/lib/prisma'
 import path from 'path'
 import fs from 'fs'
 
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 'image/heic', 'image/heif']
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif', 
+  'image/heic', 'image/heif',
+  // Mobile browsers sometimes report these incorrectly
+  'application/octet-stream'
+]
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif', 'heic', 'heif']
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB (increased for mobile photos)
 const MAX_PHOTOS_PER_COURT = 10
 
 // GET /api/courts/[id]/photos - Get all photos for a court
@@ -77,41 +83,61 @@ export async function POST(
     }
 
     const uploaded = []
+    const errors = []
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
+      const ext = file.name.split('.').pop()?.toLowerCase() || ''
 
-      if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-        continue // Skip invalid files
+      // Check file extension first (more reliable on mobile)
+      const isValidExt = ALLOWED_EXTENSIONS.includes(ext)
+      const isValidMime = ALLOWED_MIME_TYPES.includes(file.type)
+
+      if (!isValidExt && !isValidMime) {
+        errors.push(`${file.name}: Invalid file type (${file.type || 'unknown'})`)
+        continue
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        continue // Skip oversized files
+        errors.push(`${file.name}: File too large (max 10MB)`)
+        continue
       }
 
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-      const safeExt = ['jpg', 'jpeg', 'png', 'webp', 'avif', 'gif'].includes(ext) ? ext : 'jpg'
+      if (file.size === 0) {
+        errors.push(`${file.name}: Empty file`)
+        continue
+      }
+
+      const safeExt = ALLOWED_EXTENSIONS.includes(ext) ? ext : 'jpg'
       const uniqueName = `court-${courtId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`
       const filePath = path.join(uploadsDir, uniqueName)
 
-      const buffer = Buffer.from(await file.arrayBuffer())
-      fs.writeFileSync(filePath, buffer)
+      try {
+        const buffer = Buffer.from(await file.arrayBuffer())
+        fs.writeFileSync(filePath, buffer)
 
-      const url = `/uploads/courts/${uniqueName}`
+        const url = `/uploads/courts/${uniqueName}`
 
-      const photo = await prisma.courtPhoto.create({
-        data: {
-          courtId,
-          url,
-          sortOrder: currentCount + i,
-        },
-      })
+        const photo = await prisma.courtPhoto.create({
+          data: {
+            courtId,
+            url,
+            sortOrder: currentCount + i,
+          },
+        })
 
-      uploaded.push(photo)
+        uploaded.push(photo)
+      } catch (fileError) {
+        console.error(`Error saving file ${file.name}:`, fileError)
+        errors.push(`${file.name}: Failed to save`)
+      }
     }
 
     if (uploaded.length === 0) {
-      return NextResponse.json({ error: 'No valid files were uploaded' }, { status: 400 })
+      const errorMsg = errors.length > 0 
+        ? `No files uploaded: ${errors.join('; ')}` 
+        : 'No valid files were uploaded'
+      return NextResponse.json({ error: errorMsg }, { status: 400 })
     }
 
     // If the court has no thumbnail, set the first uploaded photo as thumbnail
@@ -122,7 +148,11 @@ export async function POST(
       })
     }
 
-    return NextResponse.json({ photos: uploaded, count: uploaded.length }, { status: 201 })
+    return NextResponse.json({ 
+      photos: uploaded, 
+      count: uploaded.length,
+      errors: errors.length > 0 ? errors : undefined
+    }, { status: 201 })
   } catch (error) {
     console.error('Error uploading court photos:', error)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })

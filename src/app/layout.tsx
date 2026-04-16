@@ -22,6 +22,12 @@ export const metadata: Metadata = {
     'court booking', 'sports facility', 'online reservation',
   ],
   authors: [{ name: 'OLOPSC Court Reservation' }],
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  },
   openGraph: {
     title: 'OLOPSC Court Reservation - Book Sports Courts Online',
     description: 'Reserve Basketball, Badminton, Volleyball, and Ping Pong courts at Our Lady of Perpetual Succor College. Instant confirmation with QR code entry.',

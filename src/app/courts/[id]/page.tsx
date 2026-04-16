@@ -384,7 +384,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
               />
             </div>
 
-            <div id="time-slots" className="grid grid-cols-4 md:grid-cols-6 gap-2">
+            <div id="time-slots" className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-2">
               {isClosed ? (
                 <div className="col-span-full text-center text-gray-500 py-8">
                   <i className="fas fa-ban text-4xl mb-2"></i>
@@ -396,16 +396,16 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                   <div
                     key={slot.start}
                     onClick={() => handleSlotClick(slot)}
-                    className={`time-slot text-center py-2 px-1 rounded-lg cursor-pointer transition
+                    className={`time-slot text-center py-3 sm:py-2 px-2 sm:px-1 rounded-lg cursor-pointer transition touch-manipulation
                       ${
                         isSlotSelected(slot)
                           ? 'bg-ph-blue text-white ring-2 ring-ph-blue ring-offset-2'
                           : slot.available
-                          ? 'bg-green-100 hover:bg-green-200 text-green-800'
+                          ? 'bg-green-100 hover:bg-green-200 active:bg-green-300 text-green-800'
                           : 'bg-red-100 text-red-400 cursor-not-allowed'
                       }`}
                   >
-                    <div className="text-sm font-medium">{formatTime(slot.start)}</div>
+                    <div className="text-sm sm:text-sm font-medium">{formatTime(slot.start)}</div>
                   </div>
                 ))
               ) : (
@@ -415,15 +415,15 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
               )}
             </div>
 
-            <div className="mt-4 flex items-center space-x-4 text-sm">
+            <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm">
               <span className="flex items-center">
-                <span className="w-4 h-4 bg-green-100 rounded mr-2"></span> Available
+                <span className="w-3 h-3 sm:w-4 sm:h-4 bg-green-100 rounded mr-1.5 sm:mr-2"></span> Available
               </span>
               <span className="flex items-center">
-                <span className="w-4 h-4 bg-red-100 rounded mr-2"></span> Not Available
+                <span className="w-3 h-3 sm:w-4 sm:h-4 bg-red-100 rounded mr-1.5 sm:mr-2"></span> Not Available
               </span>
               <span className="flex items-center">
-                <span className="w-4 h-4 bg-ph-blue rounded mr-2"></span> Selected
+                <span className="w-3 h-3 sm:w-4 sm:h-4 bg-ph-blue rounded mr-1.5 sm:mr-2"></span> Selected
               </span>
             </div>
           </div>
@@ -431,12 +431,12 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
 
         {/* Sidebar - Booking Card */}
         <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 lg:sticky lg:top-24">
             <div className="text-center mb-4">
-              <span className="text-3xl font-bold text-ph-blue">
+              <span className="text-2xl sm:text-3xl font-bold text-ph-blue">
                 {formatPrice(court.hourlyRate)}
               </span>
-              <span className="text-gray-500">/hour</span>
+              <span className="text-gray-500 text-sm sm:text-base">/hour</span>
             </div>
 
             {selectedSlots.length > 0 && (
