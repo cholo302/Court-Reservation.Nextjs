@@ -217,9 +217,9 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
         Back
       </button>
 
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+        <div className="flex-1 space-y-4 sm:space-y-6">
           {/* Court Image Gallery */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             {(() => {
@@ -384,7 +384,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
               />
             </div>
 
-            <div id="time-slots" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+            <div id="time-slots" className="grid grid-cols-2 gap-2 min-[480px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-4">
               {isClosed ? (
                 <div className="col-span-full text-center text-gray-500 py-8">
                   <i className="fas fa-ban text-4xl mb-2"></i>
@@ -396,7 +396,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                   <div
                     key={slot.start}
                     onClick={() => handleSlotClick(slot)}
-                    className={`time-slot text-center py-2.5 px-1 rounded-lg cursor-pointer transition touch-manipulation min-w-0
+                    className={`time-slot text-center py-3 px-2 rounded-lg cursor-pointer transition touch-manipulation
                       ${
                         isSlotSelected(slot)
                           ? 'bg-ph-blue text-white ring-2 ring-ph-blue ring-offset-1'
@@ -405,7 +405,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                           : 'bg-red-100 text-red-400 cursor-not-allowed'
                       }`}
                   >
-                    <div className="text-xs sm:text-sm font-medium whitespace-nowrap">{formatTime(slot.start)}</div>
+                    <div className="text-sm font-medium">{formatTime(slot.start)}</div>
                   </div>
                 ))
               ) : (
@@ -430,7 +430,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
         </div>
 
         {/* Sidebar - Booking Card */}
-        <div className="space-y-4 sm:space-y-6">
+        <div className="w-full lg:w-80 xl:w-96 shrink-0 space-y-4 sm:space-y-6">
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 lg:sticky lg:top-24">
             <div className="text-center mb-4">
               <span className="text-2xl sm:text-3xl font-bold text-ph-blue">
