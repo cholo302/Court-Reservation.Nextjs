@@ -149,12 +149,19 @@ export default function CreateCourtPage() {
 
       // Upload gallery photos if any
       if (galleryFiles.length > 0) {
-        const fd = new FormData()
-        galleryFiles.forEach((file) => fd.append('photos', file))
-        try {
-          await fetch(`/api/courts/${courtData.id}/photos`, { method: 'POST', body: fd })
-        } catch {
-          toast.error('Some gallery photos failed to upload')
+        let galleryFailed = 0
+        for (const file of galleryFiles) {
+          try {
+            const fd = new FormData()
+            fd.append('photos', file)
+            const gRes = await fetch(`/api/courts/${courtData.id}/photos`, { method: 'POST', body: fd })
+            if (!gRes.ok) galleryFailed++
+          } catch {
+            galleryFailed++
+          }
+        }
+        if (galleryFailed > 0) {
+          toast.error(`${galleryFailed} gallery photo(s) failed to upload`)
         }
       }
 

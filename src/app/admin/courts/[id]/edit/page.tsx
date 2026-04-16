@@ -146,17 +146,32 @@ export default function EditCourtPage() {
   const uploadNewPhotos = async () => {
     if (newGalleryFiles.length === 0) return
     setPhotosUploading(true)
+    let uploaded = 0
+    let failed = 0
     try {
-      const fd = new FormData()
-      newGalleryFiles.forEach((file) => fd.append('photos', file))
-      const res = await fetch(`/api/courts/${courtId}/photos`, { method: 'POST', body: fd })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Upload failed')
-      setPhotos((prev) => [...prev, ...data.photos])
+      for (const file of newGalleryFiles) {
+        try {
+          const fd = new FormData()
+          fd.append('photos', file)
+          const res = await fetch(`/api/courts/${courtId}/photos`, { method: 'POST', body: fd })
+          if (!res.ok) {
+            const text = await res.text()
+            let msg = 'Upload failed'
+            try { msg = JSON.parse(text).error || msg } catch {}
+            throw new Error(msg)
+          }
+          const data = await res.json()
+          setPhotos((prev) => [...prev, ...data.photos])
+          uploaded++
+        } catch {
+          failed++
+        }
+      }
       setNewGalleryFiles([])
       newGalleryPreviews.forEach((p) => URL.revokeObjectURL(p))
       setNewGalleryPreviews([])
-      toast.success(`${data.count} photo(s) uploaded`)
+      if (uploaded > 0) toast.success(`${uploaded} photo(s) uploaded`)
+      if (failed > 0) toast.error(`${failed} photo(s) failed to upload`)
     } catch (err: any) {
       toast.error(err?.message || 'Upload failed')
     } finally {
