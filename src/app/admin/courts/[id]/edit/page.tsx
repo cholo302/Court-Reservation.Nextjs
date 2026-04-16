@@ -422,29 +422,35 @@ export default function EditCourtPage() {
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 cursor-pointer w-fit">
-                  <span className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition flex items-center gap-1.5">
-                    <i className="fas fa-images"></i> Add Photos
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleNewGalleryFiles}
-                  />
-                </label>
-                {newGalleryFiles.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={uploadNewPhotos}
-                    disabled={photosUploading}
-                    className="px-3 py-1.5 bg-ph-blue text-white text-sm rounded-lg hover:bg-blue-700 transition flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    {photosUploading ? <><BallSpinner /> Uploading...</> : <><i className="fas fa-upload"></i> Upload {newGalleryFiles.length}</>}
-                  </button>
-                )}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer w-fit">
+                    <span className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition flex items-center gap-1.5">
+                      <i className="fas fa-images"></i> Add Photos
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                      multiple
+                      className="hidden"
+                      onChange={handleNewGalleryFiles}
+                    />
+                  </label>
+                  {newGalleryFiles.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={uploadNewPhotos}
+                      disabled={photosUploading}
+                      className="px-3 py-1.5 bg-ph-blue text-white text-sm rounded-lg hover:bg-blue-700 transition flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      {photosUploading ? <><BallSpinner /> Uploading...</> : <><i className="fas fa-upload"></i> Upload {newGalleryFiles.length}</>}
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  <i className="fas fa-info-circle mr-1"></i>
+                  Supported: JPG, PNG, WebP, GIF. <span className="text-orange-600">HEIC not supported</span> - iPhone users: Settings → Camera → Formats → Most Compatible
+                </p>
               </div>
             </div>
 

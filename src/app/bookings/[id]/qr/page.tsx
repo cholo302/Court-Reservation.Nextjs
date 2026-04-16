@@ -224,7 +224,7 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
         {/* QR Card - Printable */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100" id="qr-card">
           {/* Header */}
-          <div className="bg-gradient-to-br from-ph-blue via-blue-600 to-blue-800 text-white px-6 py-8 text-center relative overflow-hidden">
+          <div className="bg-gradient-to-br from-ph-blue via-blue-600 to-blue-800 text-white px-5 py-5 text-center relative overflow-hidden print:py-3">
             {/* Background pattern */}
             <div className="absolute inset-0 opacity-10">
               <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full border-[20px] border-white"></div>
@@ -232,15 +232,15 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
             </div>
             <div className="relative">
               {booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
-                <span className="inline-block bg-orange-400 text-white text-[10px] font-bold px-3 py-1 rounded-full mb-3 tracking-wider uppercase">
+                <span className="inline-block bg-orange-400 text-white text-[10px] font-bold px-3 py-1 rounded-full mb-2 tracking-wider uppercase">
                   Downpayment Only
                 </span>
               )}
               <div className="flex items-center justify-center gap-2 mb-1">
                 <i className="fas fa-ticket-alt text-blue-200"></i>
-                <h1 className="text-2xl font-extrabold tracking-tight">Entry Pass</h1>
+                <h1 className="text-xl font-extrabold tracking-tight print:text-lg">Entry Pass</h1>
               </div>
-              <p className="text-blue-200 text-sm">Show this QR code at the venue</p>
+              <p className="text-blue-200 text-xs">Show this QR code at the venue</p>
             </div>
           </div>
 
@@ -254,61 +254,61 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* QR Code Section */}
-          <div className="px-6 pt-8 pb-6 flex flex-col items-center">
-            <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100">
+          <div className="px-5 pt-6 pb-4 flex flex-col items-center print:pt-4 print:pb-3">
+            <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100">
               <canvas
                 ref={qrCanvasRef}
-                className="w-56 h-56 print:hidden"
+                className="w-48 h-48 print:w-40 print:h-40"
                 style={{ imageRendering: 'pixelated' }}
               />
               {qrDataUrl && (
                 <img
                   src={qrDataUrl}
                   alt="Booking QR Code"
-                  className="w-56 h-56 hidden print:block"
+                  className="w-48 h-48 hidden print:block print:w-40 print:h-40"
                 />
               )}
             </div>
 
-            <div className="mt-4 text-center">
-              <p className="text-xl font-mono font-bold text-gray-900 tracking-widest bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
+            <div className="mt-3 text-center">
+              <p className="text-lg font-mono font-bold text-gray-900 tracking-widest bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 print:text-base">
                 {booking.bookingCode}
               </p>
-              <p className="text-xs text-gray-400 mt-1.5 uppercase tracking-widest">Booking Code</p>
+              <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest">Booking Code</p>
             </div>
           </div>
 
           {/* Details Section */}
-          <div className="mx-6 mb-6 bg-gray-50 rounded-xl p-5">
-            <div className="space-y-3.5">
+          <div className="mx-5 mb-4 bg-gray-50 rounded-xl p-4 print:p-3 print:mx-3">
+            <div className="space-y-2.5 print:space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-gray-400 text-sm flex items-center gap-2">
+                <span className="text-gray-400 text-sm flex items-center gap-2 print:text-xs">
                   <i className="fas fa-basketball-ball text-xs"></i> Court
                 </span>
-                <span className="font-semibold text-gray-900 text-sm">{booking.courtName}</span>
+                <span className="font-semibold text-gray-900 text-sm print:text-xs">{booking.courtName}</span>
               </div>
               <div className="border-t border-gray-200/60"></div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-400 text-sm flex items-center gap-2">
+                <span className="text-gray-400 text-sm flex items-center gap-2 print:text-xs">
                   <i className="fas fa-calendar text-xs"></i> Date
                 </span>
-                <span className="font-semibold text-gray-900 text-sm">{formatDate(booking.bookingDate)}</span>
+                <span className="font-semibold text-gray-900 text-sm print:text-xs">{formatDate(booking.bookingDate)}</span>
               </div>
               <div className="border-t border-gray-200/60"></div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-400 text-sm flex items-center gap-2">
+                <span className="text-gray-400 text-sm flex items-center gap-2 print:text-xs">
                   <i className="fas fa-clock text-xs"></i> Time
                 </span>
-                <span className="font-semibold text-gray-900 text-sm">
+                <span className="font-semibold text-gray-900 text-sm print:text-xs">
                   {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
                 </span>
               </div>
               <div className="border-t border-gray-200/60"></div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-400 text-sm flex items-center gap-2">
+                <span className="text-gray-400 text-sm flex items-center gap-2 print:text-xs">
                   <i className="fas fa-peso-sign text-xs"></i> Total Amount
                 </span>
-                <span className="font-bold text-gray-900">{formatPrice(booking.totalAmount)}</span>
+                <span className="font-bold text-gray-900 print:text-sm">{formatPrice(booking.totalAmount)}</span>
               </div>
               {booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
                 <>
@@ -332,13 +332,13 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* Status Badge */}
-          <div className="mx-6 mb-6 flex justify-center gap-2">
+          <div className="mx-5 mb-4 flex justify-center gap-2 print:mb-3 print:mx-3">
             {booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">
                 <i className="fas fa-coins mr-1"></i> Downpayment
               </span>
             )}
-            <span className={`px-3 py-1.5 rounded-full text-xs font-bold border ${
+            <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
               booking.status === 'paid'
                 ? 'bg-green-50 text-green-700 border-green-200'
                 : 'bg-blue-50 text-blue-700 border-blue-200'
@@ -349,8 +349,8 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* Footer */}
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 text-center border-t border-gray-100">
-            <p className="text-[11px] text-gray-400 print:text-gray-500">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-5 py-3 text-center border-t border-gray-100 print:py-2">
+            <p className="text-[10px] text-gray-400 print:text-gray-500">
               <i className="fas fa-info-circle mr-1"></i>
               Present this QR code to the staff upon arrival
             </p>
@@ -425,20 +425,46 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
           [class*="print:hidden"] {
             display: none !important;
           }
+          /* Make container fit */
+          .min-h-screen {
+            min-height: auto !important;
+            padding: 0 !important;
+          }
+          .container {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+          }
           /* Reset the page container */
           #qr-card {
             margin: 0 auto !important;
             width: 100% !important;
-            max-width: 400px !important;
+            max-width: 350px !important;
             box-shadow: none !important;
-            border: none !important;
-            border-radius: 0 !important;
+            border: 1px solid #ddd !important;
+            border-radius: 8px !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+            font-size: 12px !important;
+          }
+          /* Reduce padding in print */
+          #qr-card > div {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+          }
+          /* Smaller QR code for print */
+          #qr-card canvas,
+          #qr-card img {
+            width: 180px !important;
+            height: 180px !important;
+          }
+          /* Reduce header size */
+          #qr-card h1 {
+            font-size: 18px !important;
           }
           /* Ensure single page */
           @page {
-            margin: 10mm;
+            margin: 5mm;
             size: auto;
           }
         }
