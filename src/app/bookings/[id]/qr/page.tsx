@@ -412,26 +412,34 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
       {/* Print Styles */}
       <style jsx global>{`
         @media print {
-          body {
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
             background: white !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
-          body * {
-            visibility: hidden;
+          /* Hide everything except the card */
+          nav, header, footer,
+          .print\:hidden,
+          [class*="print:hidden"] {
+            display: none !important;
           }
-          #qr-card, #qr-card * {
-            visibility: visible !important;
-          }
+          /* Reset the page container */
           #qr-card {
-            position: absolute;
-            left: 50%;
-            top: 0;
-            transform: translateX(-50%);
-            width: 380px;
+            margin: 0 auto !important;
+            width: 100% !important;
+            max-width: 400px !important;
             box-shadow: none !important;
-            border: 1px solid #e5e7eb !important;
-            border-radius: 12px !important;
+            border: none !important;
+            border-radius: 0 !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          /* Ensure single page */
+          @page {
+            margin: 10mm;
+            size: auto;
           }
         }
       `}</style>
