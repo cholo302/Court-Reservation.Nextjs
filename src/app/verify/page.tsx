@@ -93,7 +93,13 @@ export default function VerifyPage() {
       
       router.refresh()
     } catch (error: any) {
-      toast.error(error?.message || 'An error occurred. Please try again.')
+      console.error('Verification error:', error)
+      // Handle network errors specifically
+      if (error?.message === 'Failed to fetch' || error?.name === 'TypeError') {
+        toast.error('Network error. Please check your connection and try again.')
+      } else {
+        toast.error(error?.message || 'An error occurred. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }

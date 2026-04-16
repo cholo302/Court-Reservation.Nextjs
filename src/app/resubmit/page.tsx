@@ -75,7 +75,14 @@ export default function ResubmitPage() {
       })
 
       if (!res.ok) {
-        throw new Error('Upload failed')
+        let errorMessage = 'Upload failed'
+        try {
+          const data = await res.json()
+          errorMessage = data.error || errorMessage
+        } catch {
+          errorMessage = `Server error (${res.status}). Please try again.`
+        }
+        throw new Error(errorMessage)
       }
 
       toast.success('Documents submitted successfully! Our admin will review them shortly.')
@@ -86,8 +93,14 @@ export default function ResubmitPage() {
         govIdPhoto: null,
         facePhoto: null,
       })
-    } catch (error) {
-      toast.error('Failed to upload documents. Please try again.')
+    } catch (error: any) {
+      console.error('Upload error:', error)
+      // Handle network errors specifically
+      if (error?.message === 'Failed to fetch' || error?.name === 'TypeError') {
+        toast.error('Network error. Please check your connection and try again.')
+      } else {
+        toast.error(error?.message || 'Failed to upload documents. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }
