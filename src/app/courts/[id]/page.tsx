@@ -230,7 +230,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                 : []
               return (
                 <div
-                  className="h-80 bg-gradient-to-br from-ph-blue to-blue-700 relative select-none"
+                  className="h-72 sm:h-96 lg:h-[28rem] bg-gradient-to-br from-ph-blue to-blue-700 relative select-none"
                   onTouchStart={(e) => { if (allImages.length > 1) touchStartX.current = e.touches[0].clientX }}
                   onTouchEnd={(e) => {
                     if (touchStartX.current === null || allImages.length <= 1) return
@@ -302,7 +302,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                   <button
                     key={photo.id}
                     onClick={() => setActivePhoto(i)}
-                    className={`shrink-0 w-16 h-12 rounded-md overflow-hidden border-2 transition ${
+                    className={`shrink-0 w-20 h-14 rounded-md overflow-hidden border-2 transition ${
                       i === activePhoto ? 'border-ph-blue' : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
