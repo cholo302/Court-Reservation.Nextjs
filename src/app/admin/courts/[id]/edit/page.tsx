@@ -374,7 +374,7 @@ export default function EditCourtPage() {
                       <button
                         type="button"
                         onClick={() => handleDeletePhoto(photo.id)}
-                        className="absolute top-1 right-1 bg-red-500/80 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 bg-red-500/80 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                       >
                         <i className="fas fa-trash text-[10px]"></i>
                       </button>
