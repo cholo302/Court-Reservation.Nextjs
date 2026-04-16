@@ -258,14 +258,14 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
             <div className="bg-white p-2 rounded-xl shadow-sm border border-gray-100">
               <canvas
                 ref={qrCanvasRef}
-                className="w-48 h-48 print:w-40 print:h-40"
+                className="w-48 h-48 print:hidden"
                 style={{ imageRendering: 'pixelated' }}
               />
               {qrDataUrl && (
                 <img
                   src={qrDataUrl}
                   alt="Booking QR Code"
-                  className="w-48 h-48 hidden print:block print:w-40 print:h-40"
+                  className="w-48 h-48 hidden print:block print:w-36 print:h-36"
                 />
               )}
             </div>
