@@ -230,7 +230,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                 : []
               return (
                 <div
-                  className="h-72 sm:h-96 lg:h-[28rem] bg-gradient-to-br from-ph-blue to-blue-700 relative select-none"
+                  className="h-72 sm:h-96 lg:h-[28rem] bg-gray-900 relative select-none"
                   onTouchStart={(e) => { if (allImages.length > 1) touchStartX.current = e.touches[0].clientX }}
                   onTouchEnd={(e) => {
                     if (touchStartX.current === null || allImages.length <= 1) return
@@ -241,7 +241,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                   }}
                 >
                   {allImages.length === 0 ? (
-                    <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-ph-blue to-blue-700">
                       <i className="fas fa-basketball-ball text-white/30 text-8xl"></i>
                     </div>
                   ) : (
@@ -249,7 +249,7 @@ export default function CourtDetailPage({ params }: { params: { id: string } }) 
                       <img
                         src={allImages[activePhoto] || allImages[0]}
                         alt={court.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                       {allImages.length > 1 && (
                         <>
