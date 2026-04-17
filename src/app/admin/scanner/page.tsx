@@ -20,6 +20,8 @@ interface ScanResult {
   totalAmount: number
   downpaymentAmount: number
   balanceAmount: number
+  checkedInAt: string | null
+  checkedOutAt: string | null
 }
 
 interface CheckIn {
@@ -42,6 +44,7 @@ export default function QRScannerPage() {
   const [loading, setLoading] = useState(false)
   const [confirmingPayment, setConfirmingPayment] = useState(false)
   const [checkingIn, setCheckingIn] = useState(false)
+  const [checkingOut, setCheckingOut] = useState(false)
   const [result, setResult] = useState<ScanResult | null>(null)
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [uploadPreview, setUploadPreview] = useState<string | null>(null)
@@ -530,6 +533,8 @@ export default function QRScannerPage() {
         totalAmount: Number(booking.totalAmount),
         downpaymentAmount: Number(booking.downpaymentAmount || 0),
         balanceAmount: Number(booking.balanceAmount || 0),
+        checkedInAt: booking.checkedInAt || null,
+        checkedOutAt: booking.checkedOutAt || null,
       })
 
       if (booking.status === 'paid' || booking.status === 'confirmed') {
@@ -601,7 +606,7 @@ export default function QRScannerPage() {
       ])
 
       toast.success('Customer checked in successfully!')
-      setResult({ ...result, status: 'completed' })
+      setResult({ ...result, status: 'completed', checkedInAt: new Date().toISOString() })
     } catch (error: any) {
       toast.error(error?.message || 'Failed to check in')
     } finally {
@@ -613,6 +618,30 @@ export default function QRScannerPage() {
     setResult(null)
     setManualCode('')
     setUploadPreview(null)
+  }
+
+  const markAsCheckedOut = async () => {
+    if (!result) return
+
+    setCheckingOut(true)
+    try {
+      const response = await fetch(`/api/bookings/${result.bookingCode}/check-out`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to check out')
+      }
+
+      toast.success('Customer checked out successfully!')
+      setResult({ ...result, checkedOutAt: new Date().toISOString() })
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to check out')
+    } finally {
+      setCheckingOut(false)
+    }
   }
 
   const formatPrice = (price: number) =>
@@ -649,6 +678,8 @@ export default function QRScannerPage() {
   const isBalancePending = isDownpaymentBooking && result?.paymentStatus === 'downpayment'
   const isFullyPaid = result?.paymentStatus === 'paid'
   const canCheckIn = result && (result.status === 'paid' || result.status === 'confirmed') && isFullyPaid
+  const isCheckedIn = result?.status === 'completed' && !result?.checkedOutAt
+  const isCheckedOut = result?.status === 'completed' && !!result?.checkedOutAt
 
   return (
     <div>
@@ -1015,7 +1046,9 @@ export default function QRScannerPage() {
 
               {/* Validation Status */}
               <div className={`p-4 rounded-xl ${
-                result.status === 'completed'
+                isCheckedOut
+                  ? 'bg-gray-50 border border-gray-200'
+                  : isCheckedIn
                   ? 'bg-blue-50 border border-blue-100'
                   : (result.status === 'paid' || result.status === 'confirmed')
                   ? isUnpaid
@@ -1029,7 +1062,9 @@ export default function QRScannerPage() {
               }`}>
                 <div className="flex items-center gap-3">
                   <i className={`fas text-xl ${
-                    result.status === 'completed'
+                    isCheckedOut
+                      ? 'fa-door-open text-gray-500'
+                      : isCheckedIn
                       ? 'fa-check-double text-blue-600'
                       : (result.status === 'paid' || result.status === 'confirmed')
                       ? isUnpaid
@@ -1043,8 +1078,10 @@ export default function QRScannerPage() {
                   }`}></i>
                   <div>
                     <p className="font-bold text-sm">
-                      {result.status === 'completed'
-                        ? 'Already Checked In'
+                      {isCheckedOut
+                        ? 'Session Ended'
+                        : isCheckedIn
+                        ? 'Checked In — Session Active'
                         : (result.status === 'paid' || result.status === 'confirmed')
                         ? isUnpaid
                           ? 'Payment Not Made'
@@ -1056,8 +1093,10 @@ export default function QRScannerPage() {
                         : 'Invalid - Do Not Allow Entry'}
                     </p>
                     <p className="text-xs text-gray-600 mt-0.5">
-                      {result.status === 'completed'
-                        ? 'This booking has already been used'
+                      {isCheckedOut
+                        ? `Checked out at ${new Date(result.checkedOutAt!).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`
+                        : isCheckedIn
+                        ? `Checked in at ${result.checkedInAt ? new Date(result.checkedInAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : 'N/A'} — mark checkout when done`
                         : (result.status === 'paid' || result.status === 'confirmed')
                         ? isUnpaid
                           ? 'Customer has not paid yet. Do not allow entry.'
@@ -1110,6 +1149,22 @@ export default function QRScannerPage() {
                     )}
                   </button>
                 </div>
+              )}
+
+              {/* Checkout button for checked-in bookings */}
+              {isCheckedIn && (
+                <button
+                  onClick={markAsCheckedOut}
+                  disabled={checkingOut}
+                  className="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {checkingOut ? (
+                    <BallSpinner />
+                  ) : (
+                    <i className="fas fa-door-open"></i>
+                  )}
+                  Check Out — Session Done
+                </button>
               )}
 
               <button

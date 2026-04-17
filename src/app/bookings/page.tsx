@@ -20,6 +20,8 @@ interface Booking {
   downpaymentAmount: number
   balanceAmount: number
   paymentType: string | null
+  checkedInAt: string | null
+  checkedOutAt: string | null
   court: {
     id: number
     name: string
@@ -267,6 +269,16 @@ function BookingsPage() {
                           {booking.payment?.status === 'paid' && (
                             <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
                               <i className="fas fa-check-circle mr-1"></i>Paid
+                            </span>
+                          )}
+                          {booking.status === 'completed' && booking.checkedOutAt && (
+                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">
+                              <i className="fas fa-door-open mr-1"></i>Session Ended
+                            </span>
+                          )}
+                          {booking.status === 'completed' && !booking.checkedOutAt && (
+                            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
+                              <i className="fas fa-basketball-ball mr-1"></i>In Session
                             </span>
                           )}
                           <span className="text-gray-400 text-sm ml-3">

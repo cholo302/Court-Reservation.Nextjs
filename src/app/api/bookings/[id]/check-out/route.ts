@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
-// POST /api/bookings/[id]/check-in - Check in for a booking (mark as completed)
+// POST /api/bookings/[id]/check-out - Check out a booking (players are done)
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -18,14 +18,13 @@ export async function POST(
 
     // Support lookup by ID or booking code
     const isNumericId = /^\d+$/.test(params.id)
-    
+
     const booking = await prisma.booking.findFirst({
-      where: isNumericId 
+      where: isNumericId
         ? { id: parseInt(params.id) }
         : { bookingCode: params.id },
       include: {
         court: true,
-        payments: { orderBy: { createdAt: 'desc' }, take: 1 },
       },
     })
 
@@ -33,30 +32,37 @@ export async function POST(
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     }
 
-    // Ensure payment is fully settled before check-in
-    if (booking.paymentStatus !== 'paid') {
+    // Only completed (checked-in) bookings can be checked out
+    if (booking.status !== 'completed') {
       return NextResponse.json(
-        { error: 'Cannot check in: payment is not fully settled. Please confirm balance payment first.' },
+        { error: 'Cannot check out: booking has not been checked in yet.' },
         { status: 400 }
       )
     }
 
-    // Update booking status to completed
+    // Prevent double checkout
+    if (booking.checkedOutAt) {
+      return NextResponse.json(
+        { error: 'This booking has already been checked out.' },
+        { status: 400 }
+      )
+    }
+
+    // Update booking with checkout timestamp
     const updatedBooking = await prisma.booking.update({
       where: { id: booking.id },
       data: {
-        status: 'completed',
-        checkedInAt: new Date(),
+        checkedOutAt: new Date(),
       },
     })
 
-    // Notify user of successful check-in
+    // Notify user of checkout
     await prisma.notification.create({
       data: {
         userId: booking.userId,
-        type: 'booking_checked_in',
-        title: 'Checked In Successfully',
-        message: `You have been checked in for your booking at ${booking.court?.name}. Enjoy your game!`,
+        type: 'booking_checked_out',
+        title: 'Checked Out',
+        message: `Your session at ${booking.court?.name} has ended. Thank you for playing!`,
         data: JSON.stringify({ bookingId: booking.id }),
         channel: 'web',
       },
@@ -66,8 +72,8 @@ export async function POST(
     await prisma.activityLog.create({
       data: {
         userId: parseInt(session.user.id),
-        action: 'check_in',
-        description: `Booking ${booking.bookingCode} checked in at ${booking.court?.name}`,
+        action: 'check_out',
+        description: `Booking ${booking.bookingCode} checked out from ${booking.court?.name}`,
         entityType: 'booking',
         entityId: booking.id,
       },
@@ -76,10 +82,10 @@ export async function POST(
     return NextResponse.json({
       ...updatedBooking,
       totalAmount: Number(updatedBooking.totalAmount),
-      message: 'Check-in successful',
+      message: 'Check-out successful',
     })
   } catch (error) {
-    console.error('Error checking in booking:', error)
-    return NextResponse.json({ error: 'Failed to check in booking' }, { status: 500 })
+    console.error('Error checking out booking:', error)
+    return NextResponse.json({ error: 'Failed to check out booking' }, { status: 500 })
   }
 }

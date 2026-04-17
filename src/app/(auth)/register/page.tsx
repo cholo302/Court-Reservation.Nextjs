@@ -46,17 +46,23 @@ export default function RegisterPage() {
     switch (name) {
       case 'firstName':
         if (!value) return 'First name is required'
+        if ((value as string).trim().length < 2) return 'First name must be at least 2 characters'
+        if ((value as string).length > 50) return 'First name must not exceed 50 characters'
         if (!/^[a-zA-ZÀ-ÿ\s\-']+$/.test(value as string)) return 'Only letters, spaces, hyphens allowed'
         return ''
       case 'lastName':
         if (!value) return 'Last name is required'
+        if ((value as string).trim().length < 2) return 'Last name must be at least 2 characters'
+        if ((value as string).length > 50) return 'Last name must not exceed 50 characters'
         if (!/^[a-zA-ZÀ-ÿ\s\-']+$/.test(value as string)) return 'Only letters, spaces, hyphens allowed'
         return ''
       case 'middleName':
+        if (value && (value as string).length > 50) return 'Middle name must not exceed 50 characters'
         if (value && !/^[a-zA-ZÀ-ÿ\s\-']+$/.test(value as string)) return 'Only letters, spaces, hyphens allowed'
         return ''
       case 'email':
         if (!value) return 'Email is required'
+        if ((value as string).length > 100) return 'Email must not exceed 100 characters'
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value as string)) return 'Enter a valid email address'
         return ''
       case 'phone':
@@ -65,8 +71,10 @@ export default function RegisterPage() {
         return ''
       case 'password':
         if (!value) return 'Password is required'
-        if ((value as string).length < 6) return 'Password must be at least 6 characters'
+        if ((value as string).length < 8) return 'Password must be at least 8 characters'
+        if ((value as string).length > 128) return 'Password must not exceed 128 characters'
         if (!/[A-Za-z]/.test(value as string)) return 'Password must contain at least one letter'
+        if (!/[0-9]/.test(value as string)) return 'Password must contain at least one number'
         return ''
       case 'passwordConfirmation':
         if (!value) return 'Please confirm your password'
@@ -400,7 +408,7 @@ export default function RegisterPage() {
                 </button>
               </div>
               <ErrorMsg name="password" />
-              {!errors['password'] && <p className="mt-1 text-xs text-gray-500">At least 6 characters</p>}
+              {!errors['password'] && <p className="mt-1 text-xs text-gray-500">At least 8 characters with letters and numbers</p>}
             </div>
 
             <div>
