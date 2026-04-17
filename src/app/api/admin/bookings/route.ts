@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
         balanceAmount: Number(b.balanceAmount),
         courtName: b.court?.name,
         courtType: b.court?.courtType?.name,
+        courtThumbnail: b.court?.thumbnail || null,
         userName: b.user?.name,
         userEmail: b.user?.email,
         userPhone: b.user?.phone,

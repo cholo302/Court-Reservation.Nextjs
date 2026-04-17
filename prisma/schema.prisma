@@ -125,6 +125,7 @@ model CourtSchedule {
 
   court Court @relation(fields: [courtId], references: [id])
 
+  @@index([courtId, date])
   @@map("court_schedules")
 }
 
@@ -164,6 +165,11 @@ model Booking {
   payments Payment[]
   review   Review?
 
+  @@index([status])
+  @@index([bookingDate])
+  @@index([userId])
+  @@index([courtId])
+  @@index([status, bookingDate])
   @@map("bookings")
 }
 
@@ -195,6 +201,9 @@ model Payment {
   booking Booking @relation(fields: [bookingId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
 
+  @@index([status])
+  @@index([bookingId])
+  @@index([userId])
   @@map("payments")
 }
 
@@ -228,6 +237,8 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id])
 
+  @@index([userId])
+  @@index([userId, readAt])
   @@map("notifications")
 }
 

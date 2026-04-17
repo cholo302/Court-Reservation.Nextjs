@@ -16,10 +16,12 @@ interface Booking {
   status: string
   paymentStatus: string
   courtName: string
+  courtThumbnail: string | null
   userName: string
   userEmail: string
   userAvatar: string | null
   checkedOutAt: string | null
+  playerCount?: number
 }
 
 const statusConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
@@ -197,61 +199,110 @@ function BookingsContent() {
               const config = statusConfig[booking.status] || statusConfig.pending
               return (
                 <div key={booking.id}>
-                  {/* Mobile card */}
-                  <div className="md:hidden p-4 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-sm text-gray-900">{booking.bookingCode}</p>
-                        <p className="text-xs text-gray-400 truncate">{booking.courtName}</p>
-                      </div>
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${config.bg} ${config.text}`}>
-                        <i className={`fas ${config.icon} text-[10px]`}></i>
-                        {config.label}
-                      </span>
-                      {booking.status === 'completed' && booking.checkedOutAt && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
-                          <i className="fas fa-door-open text-[10px]"></i>
-                          Checked Out
-                        </span>
-                      )}
-                      {booking.status === 'completed' && !booking.checkedOutAt && (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
-                          <i className="fas fa-basketball-ball text-[10px]"></i>
-                          In Session
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
-                        {booking.userAvatar ? (
-                          <img src={booking.userAvatar} alt={booking.userName} className="w-full h-full object-cover" />
+                  {/* Mobile card - redesigned to match user side */}
+                  <div className="md:hidden bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition mb-4 mx-4">
+                    <div className="flex flex-col">
+                      {/* Court Image */}
+                      <div className="h-32 bg-gray-200 flex-shrink-0">
+                        {booking.courtThumbnail ? (
+                          <img
+                            src={booking.courtThumbnail}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
-                          <i className="fas fa-user text-gray-400 text-[10px]"></i>
+                          <div className="w-full h-full flex items-center justify-center">
+                            <i className="fas fa-basketball-ball text-gray-400 text-3xl"></i>
+                          </div>
                         )}
                       </div>
-                      <p className="text-sm text-gray-700 truncate">{booking.userName}</p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-gray-500">
-                        {formatDate(booking.bookingDate)} &middot; {formatTime(booking.startTime)}-{formatTime(booking.endTime)}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">{formatPrice(booking.totalAmount)}</p>
-                    </div>
-                    <div className="flex items-center gap-2 pt-1">
-                      <Link
-                        href={`/admin/bookings/${booking.id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 text-xs font-medium border border-gray-200"
-                      >
-                        <i className="fas fa-eye"></i> View
-                      </Link>
-                      {booking.status === 'confirmed' && !booking.paymentStatus?.includes('paid') && (
-                        <button
-                          onClick={() => handleAction(booking.id, 'cancel')}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-medium border border-red-200"
-                        >
-                          <i className="fas fa-times-circle"></i> Cancel
-                        </button>
-                      )}
+
+                      {/* Booking Details */}
+                      <div className="p-4">
+                        <div className="flex flex-col">
+                          <div className="mb-3">
+                            {/* Status Badges */}
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <span className={`${config.bg} ${config.text} px-3 py-1 rounded-full text-xs font-medium`}>
+                                <i className={`fas ${config.icon} mr-1`}></i>
+                                {config.label}
+                              </span>
+                              {booking.status === 'completed' && booking.checkedOutAt && (
+                                <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">
+                                  <i className="fas fa-door-open mr-1"></i>Checked Out
+                                </span>
+                              )}
+                              {booking.status === 'completed' && !booking.checkedOutAt && (
+                                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
+                                  <i className="fas fa-basketball-ball mr-1"></i>In Session
+                                </span>
+                              )}
+                              <span className="text-gray-400 text-sm ml-1">
+                                #{booking.bookingCode}
+                              </span>
+                            </div>
+
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                              {booking.courtName}
+                            </h3>
+
+                            {/* Customer Info */}
+                            <div className="flex items-center gap-2 mb-3 bg-gray-50 rounded-lg p-2">
+                              <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
+                                {booking.userAvatar ? (
+                                  <img src={booking.userAvatar} alt={booking.userName} className="w-full h-full object-cover" />
+                                ) : (
+                                  <i className="fas fa-user text-gray-400 text-xs"></i>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-gray-900 truncate">{booking.userName}</p>
+                                <p className="text-xs text-gray-500 truncate">{booking.userEmail}</p>
+                              </div>
+                            </div>
+
+                            {/* Date & Time */}
+                            <div className="flex flex-wrap gap-3 text-sm text-gray-600">
+                              <span>
+                                <i className="fas fa-calendar text-ph-blue mr-1"></i>
+                                {formatDate(booking.bookingDate)}
+                              </span>
+                              <span>
+                                <i className="fas fa-clock text-ph-blue mr-1"></i>
+                                {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Price */}
+                          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                            <div>
+                              <p className="text-2xl font-bold text-ph-blue">
+                                {formatPrice(booking.totalAmount)}
+                              </p>
+                              <p className="text-xs text-gray-500">Total Amount</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
+                          <Link
+                            href={`/admin/bookings/${booking.id}`}
+                            className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
+                          >
+                            <i className="fas fa-eye mr-2"></i>View Details
+                          </Link>
+                          {booking.status === 'confirmed' && !booking.paymentStatus?.includes('paid') && (
+                            <button
+                              onClick={() => handleAction(booking.id, 'cancel')}
+                              className="inline-flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition"
+                            >
+                              <i className="fas fa-times mr-2"></i>Cancel
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                   {/* Desktop row */}
