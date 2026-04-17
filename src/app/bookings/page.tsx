@@ -361,12 +361,19 @@ function BookingsPage() {
                         </>
                       )}
 
-                      {['paid', 'confirmed'].includes(booking.status) && (booking.payment?.status === 'downpayment' || booking.payment?.status === 'paid') && (
+                      {/* Show QR Code button for paid/confirmed AND in-session (completed but not checked out) */}
+                      {((['paid', 'confirmed'].includes(booking.status) && (booking.payment?.status === 'downpayment' || booking.payment?.status === 'paid')) ||
+                        (booking.status === 'completed' && !booking.checkedOutAt)) && (
                         <Link
                           href={`/bookings/${booking.id}/qr`}
-                          className="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition"
+                          className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition ${
+                            booking.status === 'completed' && !booking.checkedOutAt
+                              ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                              : 'bg-green-100 text-green-700 hover:bg-green-200'
+                          }`}
                         >
-                          <i className="fas fa-qrcode mr-2"></i>View QR Code
+                          <i className="fas fa-qrcode mr-2"></i>
+                          {booking.status === 'completed' && !booking.checkedOutAt ? 'Exit Pass' : 'View QR Code'}
                         </Link>
                       )}
 

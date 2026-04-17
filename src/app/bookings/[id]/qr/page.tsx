@@ -180,7 +180,8 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
   // Check if booking is valid for QR display
   const isPaymentApproved = booking.paymentStatus === 'downpayment' || booking.paymentStatus === 'paid'
   const isCheckedOut = !!booking.checkedOutAt
-  const isValidForEntry = ['paid', 'confirmed'].includes(booking.status) && isPaymentApproved && !isCheckedOut
+  // Show QR for paid/confirmed bookings AND completed (in-session) bookings that haven't checked out yet
+  const isValidForEntry = (['paid', 'confirmed'].includes(booking.status) || (booking.status === 'completed' && !isCheckedOut)) && isPaymentApproved
 
   if (!isValidForEntry) {
     return (
@@ -259,16 +260,27 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
               <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full border-[16px] border-white"></div>
             </div>
             <div className="relative">
-              {booking.paymentType === 'venue' && booking.balanceAmount > 0 && (
+              {booking.status === 'completed' && !booking.checkedOutAt && (
+                <span className="inline-block bg-green-400 text-white text-[10px] font-bold px-3 py-1 rounded-full mb-2 tracking-wider uppercase">
+                  <i className="fas fa-basketball-ball mr-1"></i> In Session
+                </span>
+              )}
+              {booking.paymentType === 'venue' && booking.balanceAmount > 0 && booking.status !== 'completed' && (
                 <span className="inline-block bg-orange-400 text-white text-[10px] font-bold px-3 py-1 rounded-full mb-2 tracking-wider uppercase">
                   Downpayment Only
                 </span>
               )}
               <div className="flex items-center justify-center gap-2 mb-1">
                 <i className="fas fa-ticket-alt text-blue-200"></i>
-                <h1 className="text-xl font-extrabold tracking-tight print:text-lg">Entry Pass</h1>
+                <h1 className="text-xl font-extrabold tracking-tight print:text-lg">
+                  {booking.status === 'completed' && !booking.checkedOutAt ? 'Exit Pass' : 'Entry Pass'}
+                </h1>
               </div>
-              <p className="text-blue-200 text-xs">Show this QR code at the venue</p>
+              <p className="text-blue-200 text-xs">
+                {booking.status === 'completed' && !booking.checkedOutAt 
+                  ? 'Show this QR code to check out' 
+                  : 'Show this QR code at the venue'}
+              </p>
             </div>
           </div>
 
@@ -375,6 +387,24 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
               {booking.status.toUpperCase()}
             </span>
           </div>
+
+          {/* Footer */}
+          {/* Checkout reminder for in-session bookings */}
+          {booking.status === 'completed' && !isCheckedOut && (
+            <div className="mx-5 mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <i className="fas fa-info-circle text-blue-600"></i>
+                </div>
+                <div>
+                  <p className="font-semibold text-blue-900 text-sm">Keep this QR code handy!</p>
+                  <p className="text-blue-700 text-xs mt-1">
+                    You'll need to show this entry pass again when you check out at the end of your session.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-5 py-3 text-center border-t border-gray-100 print:py-2">
