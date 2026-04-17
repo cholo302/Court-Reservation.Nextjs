@@ -19,6 +19,7 @@ interface Booking {
   userName: string
   userEmail: string
   userAvatar: string | null
+  checkedOutAt: string | null
 }
 
 const statusConfig: Record<string, { bg: string; text: string; icon: string; label: string }> = {
@@ -207,6 +208,18 @@ function BookingsContent() {
                         <i className={`fas ${config.icon} text-[10px]`}></i>
                         {config.label}
                       </span>
+                      {booking.status === 'completed' && booking.checkedOutAt && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
+                          <i className="fas fa-door-open text-[10px]"></i>
+                          Checked Out
+                        </span>
+                      )}
+                      {booking.status === 'completed' && !booking.checkedOutAt && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 whitespace-nowrap">
+                          <i className="fas fa-basketball-ball text-[10px]"></i>
+                          In Session
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full flex-shrink-0 overflow-hidden bg-gray-200 flex items-center justify-center">
@@ -276,6 +289,18 @@ function BookingsContent() {
                         <i className={`fas ${config.icon} text-xs`}></i>
                         {config.label}
                       </span>
+                      {booking.status === 'completed' && booking.checkedOutAt && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                          <i className="fas fa-door-open text-xs"></i>
+                          Checked Out
+                        </span>
+                      )}
+                      {booking.status === 'completed' && !booking.checkedOutAt && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                          <i className="fas fa-basketball-ball text-xs"></i>
+                          In Session
+                        </span>
+                      )}
                     </div>
                     <div className="col-span-2 flex flex-wrap items-center gap-1.5">
                       <Link

@@ -22,6 +22,7 @@ interface BookingDetails {
   balanceAmount: number
   paymentType: string | null
   entryQrCode: string | null
+  checkedOutAt: string | null
 }
 
 export default function BookingQRPage({ params }: { params: { id: string } }) {
@@ -29,40 +30,53 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
   const [booking, setBooking] = useState<BookingDetails | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchBooking = async () => {
-      try {
-        const response = await fetch(`/api/bookings/${params.id}`)
-        if (!response.ok) throw new Error('Booking not found')
-        const data = await response.json()
-        
-        const b = data.booking
-        setBooking({
-          id: b.id,
-          bookingCode: b.bookingCode,
-          status: b.status,
-          paymentStatus: b.payment?.status || null,
-          bookingDate: b.bookingDate,
-          startTime: b.startTime,
-          endTime: b.endTime,
-          courtName: b.courtName || b.court?.name,
-          courtLocation: b.courtLocation || b.court?.location,
-          totalAmount: Number(b.totalAmount),
-          downpaymentAmount: Number(b.downpaymentAmount),
-          balanceAmount: Number(b.balanceAmount),
-          paymentType: b.paymentType,
-          entryQrCode: b.entryQrCode,
-        })
-      } catch (error) {
+  const fetchBooking = useCallback(async (silent = false) => {
+    try {
+      const response = await fetch(`/api/bookings/${params.id}`)
+      if (!response.ok) throw new Error('Booking not found')
+      const data = await response.json()
+
+      const b = data.booking
+      setBooking({
+        id: b.id,
+        bookingCode: b.bookingCode,
+        status: b.status,
+        paymentStatus: b.payment?.status || null,
+        bookingDate: b.bookingDate,
+        startTime: b.startTime,
+        endTime: b.endTime,
+        courtName: b.courtName || b.court?.name,
+        courtLocation: b.courtLocation || b.court?.location,
+        totalAmount: Number(b.totalAmount),
+        downpaymentAmount: Number(b.downpaymentAmount),
+        balanceAmount: Number(b.balanceAmount),
+        paymentType: b.paymentType,
+        entryQrCode: b.entryQrCode,
+        checkedOutAt: b.checkedOutAt || null,
+      })
+    } catch (error) {
+      if (!silent) {
         toast.error('Booking not found')
         router.push('/bookings')
-      } finally {
-        setLoading(false)
       }
+    } finally {
+      if (!silent) setLoading(false)
     }
-
-    fetchBooking()
   }, [params.id, router])
+
+  useEffect(() => {
+    fetchBooking()
+    // Poll every 10 seconds to detect checkout
+    const interval = setInterval(() => fetchBooking(true), 10000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchBooking(true)
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [fetchBooking])
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -165,7 +179,8 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
 
   // Check if booking is valid for QR display
   const isPaymentApproved = booking.paymentStatus === 'downpayment' || booking.paymentStatus === 'paid'
-  const isValidForEntry = ['paid', 'confirmed'].includes(booking.status) && isPaymentApproved
+  const isCheckedOut = !!booking.checkedOutAt
+  const isValidForEntry = ['paid', 'confirmed'].includes(booking.status) && isPaymentApproved && !isCheckedOut
 
   if (!isValidForEntry) {
     return (
@@ -180,12 +195,16 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
           </Link>
 
           <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="fas fa-exclamation-triangle text-3xl text-yellow-600"></i>
+            <div className={`w-20 h-20 ${isCheckedOut ? 'bg-gray-100' : 'bg-yellow-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+              <i className={`fas ${isCheckedOut ? 'fa-door-open text-gray-500' : 'fa-exclamation-triangle text-yellow-600'} text-3xl`}></i>
             </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">QR Code Not Available</h1>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">
+              {isCheckedOut ? 'Session Ended' : 'QR Code Not Available'}
+            </h1>
             <p className="text-gray-600 mb-6">
-              {booking.status === 'cancelled'
+              {isCheckedOut
+                ? 'You have been checked out. This entry pass is no longer valid. Thank you for playing!'
+                : booking.status === 'cancelled'
                 ? 'This booking has been cancelled.'
                 : booking.status === 'completed'
                 ? 'This booking has already been completed.'
@@ -195,6 +214,15 @@ export default function BookingQRPage({ params }: { params: { id: string } }) {
                 ? 'Please complete payment to get your entry QR code.'
                 : 'QR code is not available for this booking.'}
             </p>
+            {isCheckedOut && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-6 text-sm text-gray-500">
+                <i className="fas fa-clock mr-1"></i>
+                Checked out at {new Date(booking.checkedOutAt!).toLocaleString('en-US', {
+                  month: 'short', day: 'numeric', year: 'numeric',
+                  hour: 'numeric', minute: '2-digit', hour12: true,
+                })}
+              </div>
+            )}
             {booking.status === 'pending' && (
               <Link
                 href={`/bookings/${params.id}/pay`}
