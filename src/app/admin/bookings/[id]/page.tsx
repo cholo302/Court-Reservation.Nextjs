@@ -229,14 +229,23 @@ export default function BookingDetailPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Downpayment:</span>
-                <span className="font-semibold text-green-600">{formatPrice(booking.downpaymentAmount)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Balance:</span>
-                <span className="font-semibold text-amber-600">{formatPrice(booking.balanceAmount)}</span>
-              </div>
+              {booking.paymentType === 'venue' ? (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Downpayment:</span>
+                    <span className="font-semibold text-green-600">{formatPrice(booking.downpaymentAmount)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Balance:</span>
+                    <span className="font-semibold text-amber-600">{formatPrice(booking.balanceAmount)}</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Payment Type:</span>
+                  <span className="font-semibold text-green-600">Full Payment</span>
+                </div>
+              )}
             </div>
           </div>
 

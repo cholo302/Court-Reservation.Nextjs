@@ -296,8 +296,11 @@ export async function POST(request: NextRequest) {
     }
 
     const totalAmount = durationHours * hourlyRate
-    const downpaymentAmount = Math.ceil(totalAmount * (court.downpaymentPercent / 100))
-    const balanceAmount = totalAmount - downpaymentAmount
+    const isFullPayment = (data.paymentType || 'online') === 'online'
+    const downpaymentAmount = isFullPayment
+      ? totalAmount
+      : Math.ceil(totalAmount * (court.downpaymentPercent / 100))
+    const balanceAmount = isFullPayment ? 0 : totalAmount - downpaymentAmount
 
     // Generate booking code and QR code
     const bookingCode = generateBookingCode()
